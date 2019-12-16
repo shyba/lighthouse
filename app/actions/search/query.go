@@ -13,24 +13,23 @@ import (
 
 func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	base := elastic.NewBoolQuery()
-	if exact := r.exactMatchQueries(); exact != nil {
-		base.Must(exact)
-	}
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
 	base.Should(releaseTimeFuncScoreQuery())
 	base.Should(controllingBoostQuery())
-	base.Should(r.matchPhraseClaimName())
-	base.Should(r.matchClaimName())
-	base.Should(r.containsTermName())
-	base.Should(r.titleContains())
-	base.Should(r.matchTitle())
-	base.Should(r.matchPrefixTitle())
-	base.Should(r.matchPhraseTitle())
-	base.Should(r.descriptionContains())
-	base.Should(r.matchDescription())
-	base.Should(r.matchPrefixDescription())
-	base.Should(r.matchPhraseDescription())
+	min := elastic.NewBoolQuery()
+	min.Should(r.matchPhraseClaimName())
+	min.Should(r.matchClaimName())
+	min.Should(r.containsTermName())
+	min.Should(r.titleContains())
+	min.Should(r.matchTitle())
+	min.Should(r.matchPrefixTitle())
+	min.Should(r.matchPhraseTitle())
+	min.Should(r.descriptionContains())
+	min.Should(r.matchDescription())
+	min.Should(r.matchPrefixDescription())
+	min.Should(r.matchPhraseDescription())
+	base.Must(min) //At a minimum, one of these.
 	base.Filter(r.getFilters()...)
 
 	return base
@@ -174,6 +173,10 @@ func (r searchRequest) getFilters() []elastic.Query {
 	var filters []elastic.Query
 	bidstateFilter := r.bidStateFilter()
 
+	if exact := r.exactMatchQueries(); exact != nil {
+		filters = append(filters, exact)
+	}
+
 	if nsfwFilter := r.nsfwFilter(); nsfwFilter != nil {
 		filters = append(filters, nsfwFilter)
 	}
@@ -267,7 +270,7 @@ func (r searchRequest) nsfwFilter() *elastic.MatchQuery {
 }
 
 func (r searchRequest) bidStateFilter() *elastic.BoolQuery {
-	return elastic.NewBoolQuery().MustNot(elastic.NewMatchQuery("bid_state", r.S))
+	return elastic.NewBoolQuery().MustNot(elastic.NewMatchQuery("bid_state", "Accepted"))
 }
 
 func (r searchRequest) channelIDFilter() *elastic.MatchQuery {
