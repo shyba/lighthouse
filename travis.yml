@@ -12,12 +12,6 @@ services:
   - docker
   - elasticsearch
 
-before_install:
-  - mysql -u root -e 'CREATE DATABASE IF NOT EXISTS lbry;'
-  - mysql -u root -e "CREATE USER 'lbry'@'localhost' IDENTIFIED BY 'lbry';"
-  - mysql -u root -e "GRANT ALL ON lbry.* TO 'lbry'@'localhost';"
-  - sudo service mysql restart
-
 cache:
   directories:
     - $HOME/.cache/go-build
@@ -31,7 +25,7 @@ script:
   - git fetch origin master:master
   - ./build.sh
   - go test ./...
-  - ./app/scripts/lint.sh
+  #- ./app/scripts/lint.sh
   - ./bin/lighthouse serve &
   - go mod tidy
   - git diff --exit-code
@@ -63,8 +57,3 @@ deploy:
     skip_cleanup: true
     on:
       all_branches: true
-
-notifications:
-  email: true
-  webhooks:
-    - https://lighthouse.lbry.com/selfupdate
