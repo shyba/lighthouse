@@ -125,6 +125,9 @@ func SyncClaims() {
 			}
 			claim.TransactionTime = time.Unix(int64(claim.TransactionTimeUnix), 0)
 			claim.ReleaseTime = time.Unix(int64(claim.ReleaseTimeUnix.Uint64), 0)
+			if claim.ReleaseTimeUnix.IsNull() {
+				claim.ReleaseTime = claim.TransactionTime
+			}
 			if claim.BidState == "Spent" || claim.BidState == "Expired" {
 				claim.Delete(p)
 			} else {

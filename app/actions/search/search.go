@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/validator"
@@ -49,8 +48,6 @@ func Search(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: errors.Err(err), Status: http.StatusBadRequest}
 	}
-	replacer := strings.NewReplacer("/", "\\/", "[", "\\[", "]", "\\]")
-	searchRequest.S = replacer.Replace(searchRequest.S)
 	query := searchRequest.NewQuery()
 	t, err := query.Source()
 	if err != nil {

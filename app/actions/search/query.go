@@ -8,11 +8,7 @@ import (
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/util"
-	"github.com/olivere/elastic"
-)
-
-const (
-	effectiveFactor = 0.0000000000001
+	"gopkg.in/olivere/elastic.v6"
 )
 
 func (r searchRequest) NewQuery() *elastic.BoolQuery {
@@ -22,6 +18,7 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	}
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
+	base.Should(releaseTimeFuncScoreQuery())
 	base.Should(controllingBoostQuery())
 	base.Should(r.matchPhraseClaimName())
 	base.Should(r.matchClaimName())
@@ -40,7 +37,32 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 }
 
 func (r searchRequest) escaped() string {
-	return r.S
+	// https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters
+	// The reserved characters are: + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /
+	replacer := strings.NewReplacer(
+		"+", "\\+",
+		"-", "\\-",
+		"=", "\\=",
+		"&&", "\\&\\&",
+		"||", "\\|\\|",
+		">", "\\>",
+		"<", "\\<",
+		"!", "\\!",
+		"(", "\\(",
+		")", "\\)",
+		"{", "\\{",
+		"}", "\\}",
+		"[", "\\[",
+		"]", "\\]",
+		"^", "\\^",
+		"\"", "\\\"",
+		"~", "\\~",
+		"*", "\\*",
+		"?", "\\?",
+		":", "\\:",
+		"/", "\\/",
+	)
+	return replacer.Replace(r.S)
 }
 
 func (r searchRequest) washed() string {
@@ -118,24 +140,10 @@ func (r searchRequest) matchClaimName() *elastic.MatchQuery {
 }
 
 func (r searchRequest) containsTermName() *elastic.QueryStringQuery {
-	return elastic.NewQueryStringQuery("*" + r.S + "*").
+	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("contains_term_name*3").
 		Field("name").
 		Boost(5)
-}
-
-func controllingBoostQuery() *elastic.MatchQuery {
-	return elastic.NewMatchQuery("bid_state", "Controlling").
-		QueryName("controlling_boost*20")
-}
-
-func claimWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
-	score := elastic.NewFieldValueFactorFunction().
-		Field("effective_amount").
-		Factor(effectiveFactor).
-		Missing(1)
-
-	return elastic.NewFunctionScoreQuery().AddScoreFunc(score)
 }
 
 func (r searchRequest) exactMatchQueries() elastic.Query {
@@ -160,15 +168,6 @@ func (r searchRequest) exactMatchQueries() elastic.Query {
 	}
 	//nested := elastic.NewNestedQuery("value", b)
 	return exact
-}
-
-func channelWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
-	score := elastic.NewFieldValueFactorFunction().
-		Field("certificate_amount").
-		Factor(effectiveFactor).
-		Missing(1)
-
-	return elastic.NewFunctionScoreQuery().AddScoreFunc(score)
 }
 
 func (r searchRequest) getFilters() []elastic.Query {
