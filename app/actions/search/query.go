@@ -13,11 +13,6 @@ import (
 
 const (
 	effectiveFactor = 0.0000000000001
-	authorPath      = "value.Claim.stream.metadata.author"
-	titlePath       = "value.Claim.stream.metadata.title"
-	descPath        = "value.Claim.stream.metadata.description"
-
-	nsfwPath = "value.Claim.stream.metadata.nsfw"
 )
 
 func (r searchRequest) NewQuery() *elastic.BoolQuery {
@@ -31,9 +26,14 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	base.Should(r.matchPhraseClaimName())
 	base.Should(r.matchClaimName())
 	base.Should(r.containsTermName())
-	base.Should(r.atdSearch())
-	base.Must(r.dynamicQueries()...)
-	base.Should(splitNameQueries()...)
+	base.Should(r.titleContains())
+	base.Should(r.matchTitle())
+	base.Should(r.matchPrefixTitle())
+	base.Should(r.matchPhraseTitle())
+	base.Should(r.descriptionContains())
+	base.Should(r.matchDescription())
+	base.Should(r.matchPrefixDescription())
+	base.Should(r.matchPhraseDescription())
 	base.Filter(r.getFilters()...)
 
 	return base
@@ -47,60 +47,54 @@ func (r searchRequest) washed() string {
 	return r.S
 }
 
-func (r searchRequest) dynamicQueries() []elastic.Query {
-	var queries []elastic.Query
-	if channelID := r.channelIDFilter(); channelID != nil {
-		queries = append(queries, channelID)
-	}
-	if channel := r.channelFilter(); channel != nil {
-		queries = append(queries, channel)
-	}
-	return queries
-}
-
-func splitNameQueries() []elastic.Query {
-	//Add split ATD
-	return nil
-}
-
-func splitATDQueries() []elastic.Query {
-	//Add split ATD
-	return nil
-}
-
-func (r searchRequest) atdSearch() *elastic.BoolQuery {
-	b := elastic.NewBoolQuery()
-
-	//Add queries for splits of the search query A, AB, ABC, ABCD
-	b.Should(splitATDQueries()...)
-
-	// Contains search in Author, Title, Description
-	b.Should(elastic.NewQueryStringQuery("*" + r.escaped() + "*").
-		QueryName("contains_atd").
-		//Field(authorPath).
+func (r searchRequest) titleContains() *elastic.QueryStringQuery {
+	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
+		QueryName("title-contains").
 		Field("title").
+		Boost(1)
+}
+
+func (r searchRequest) matchTitle() *elastic.MatchQuery {
+	return elastic.NewMatchQuery("title", r.washed()).
+		QueryName("match_title").
+		Boost(3)
+}
+
+func (r searchRequest) matchPrefixTitle() *elastic.MatchPhrasePrefixQuery {
+	return elastic.NewMatchPhrasePrefixQuery("title", r.escaped()).
+		QueryName("matchphraseprefix_title").
+		Boost(2)
+}
+
+func (r searchRequest) matchPhraseTitle() *elastic.MatchPhraseQuery {
+	return elastic.NewMatchPhraseQuery("title", r.escaped()).
+		QueryName("matchphrase_title").
+		Boost(2)
+}
+
+func (r searchRequest) descriptionContains() *elastic.QueryStringQuery {
+	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
+		QueryName("description-contains").
 		Field("description").
-		Boost(1))
+		Boost(1)
+}
 
-	// Match search terms - Title
-	b.Should(elastic.NewMatchQuery("title", r.washed()).
-		QueryName("match_term_title").
-		Boost(3))
-	// Match search terms - Description
-	b.Should(elastic.NewMatchQuery("description", r.washed()).
-		QueryName("match_term_desc").
-		Boost(3))
+func (r searchRequest) matchDescription() *elastic.MatchQuery {
+	return elastic.NewMatchQuery("description", r.washed()).
+		QueryName("match_desc").
+		Boost(3)
+}
 
-	// Match Phrase search - Title
-	b.Should(elastic.NewMatchPhrasePrefixQuery("title", r.escaped()).
-		QueryName("matchphrase_term_title").
-		Boost(2))
-	// Match Phrase search - Description
-	b.Should(elastic.NewMatchPhrasePrefixQuery("description", r.escaped()).
-		QueryName("matchphrase_term_desc").
-		Boost(2))
+func (r searchRequest) matchPrefixDescription() *elastic.MatchPhrasePrefixQuery {
+	return elastic.NewMatchPhrasePrefixQuery("description", r.escaped()).
+		QueryName("matchphraseprefix_description").
+		Boost(2)
+}
 
-	return b
+func (r searchRequest) matchPhraseDescription() *elastic.MatchPhraseQuery {
+	return elastic.NewMatchPhraseQuery("description", r.escaped()).
+		QueryName("matchphrase_description").
+		Boost(2)
 }
 
 func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
@@ -128,13 +122,6 @@ func (r searchRequest) containsTermName() *elastic.QueryStringQuery {
 		QueryName("contains_term_name*3").
 		Field("name").
 		Boost(5)
-}
-
-func channelSearchBoolQuery(search string) *elastic.BoolQuery {
-	q := elastic.NewQueryStringQuery(search).
-		QueryName("channel_search_bool").
-		Field("channel")
-	return elastic.NewBoolQuery().Must(q)
 }
 
 func controllingBoostQuery() *elastic.MatchQuery {
@@ -207,6 +194,14 @@ func (r searchRequest) getFilters() []elastic.Query {
 		filters = append(filters, claimTypeFilter)
 	}
 
+	if channelID := r.channelIDFilter(); channelID != nil {
+		filters = append(filters, channelID)
+	}
+
+	if channel := r.channelFilter(); channel != nil {
+		filters = append(filters, channel)
+	}
+
 	if len(filters) > 0 {
 		return append(filters, bidstateFilter)
 
@@ -276,12 +271,9 @@ func (r searchRequest) bidStateFilter() *elastic.BoolQuery {
 	return elastic.NewBoolQuery().MustNot(elastic.NewMatchQuery("bid_state", r.S))
 }
 
-func (r searchRequest) channelIDFilter() *elastic.BoolQuery {
+func (r searchRequest) channelIDFilter() *elastic.MatchQuery {
 	if r.ChannelID != nil {
-		b := elastic.NewBoolQuery()
-		channelID := elastic.NewQueryStringQuery(r.escaped()).
-			Field("channel_claim_id")
-		return b.Must(channelID)
+		return elastic.NewMatchQuery("channel_claim_id", r.ChannelID)
 	}
 	return nil
 }
