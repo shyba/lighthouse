@@ -1,0 +1,70 @@
+os: linux
+dist: xenial
+language: go
+go_import_path: github.com/lbryio/lighthouse
+
+go:
+  - 1.13
+
+install: true
+
+services:
+  - docker
+  - elasticsearch
+
+before_install:
+  - mysql -u root -e 'CREATE DATABASE IF NOT EXISTS lbry;'
+  - mysql -u root -e "CREATE USER 'lbry'@'localhost' IDENTIFIED BY 'lbry';"
+  - mysql -u root -e "GRANT ALL ON lbry.* TO 'lbry'@'localhost';"
+  - sudo service mysql restart
+
+cache:
+  directories:
+    - $HOME/.cache/go-build
+    - $HOME/gopath/pkg/mod
+
+before_script:
+  - sleep 10 # Need to give time for elastic search to start
+
+script:
+  #Fetch master to be used in deploy condition to prevent deploying on old commits.
+  - git fetch origin master:master
+  - ./build.sh
+  - go test ./...
+  - ./app/scripts/lint.sh
+  - ./bin/lighthouse serve &
+  - go mod tidy
+  - git diff --exit-code
+
+deploy:
+  # uploads per commit builds
+  - provider: s3
+    bucket: "build.lbry.io"
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    skip_cleanup: true
+    local-dir: bin
+    upload-dir: "lighthouse/branch-${TRAVIS_BRANCH}/commit-${TRAVIS_COMMIT:0:7}/build-${TRAVIS_BUILD_NUMBER}"
+    on:
+      all_branches: true
+  # upload latest successful build per branch
+  - provider: s3
+    bucket: "build.lbry.io"
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    skip_cleanup: true
+    local-dir: bin
+    upload-dir: "lighthouse/branch-${TRAVIS_BRANCH}"
+    on:
+      all_branches: true
+  # creates and publishes new docker image per branch
+  - provider: script
+    script: bash docker/docker.sh
+    skip_cleanup: true
+    on:
+      all_branches: true
+
+notifications:
+  email: true
+  webhooks:
+    - https://lighthouse.lbry.com/selfupdate

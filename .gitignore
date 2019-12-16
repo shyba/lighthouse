@@ -1,0 +1,3 @@
+.env
+bin/*
+syncstate.json

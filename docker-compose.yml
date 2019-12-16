@@ -1,0 +1,33 @@
+version: "3.5"
+################
+## Lighthouse ##
+################
+services:
+  lighthouse:
+    image: lbry/lighthouse:master
+    restart: "no"
+    ports:
+      - "16005:50005"
+    expose:
+      - "50005"
+    depends_on:
+      - elasticsearch
+    environment:
+      - CHAINQUERY_DSN=lbry:lbry@tcp(localhost:3306)/chainquery
+    entrypoint: wait-for-it -t 0 elasticsearch:9300 -- ./lighthouse serve -d
+  ####################
+  ## Elastic Search ##
+  ####################
+  elasticsearch:
+    image: elasticsearch:6.6.2
+    restart: "no"
+    expose:
+      - "9200"
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - elasticsearch01:/usr/share/elasticsearch/data
+
+volumes:
+  elasticsearch01:
+    driver: local
