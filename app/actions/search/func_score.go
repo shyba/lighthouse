@@ -36,21 +36,21 @@ func releaseTimeFuncScoreQuery() *elastic.FunctionScoreQuery {
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("7d").
-		Weight(10).
+		Weight(5).
 		Decay(0.75)
 
 	pastMonthScore := elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("30d").
-		Weight(6).
+		Weight(4).
 		Decay(0.65)
 
 	pastQuarterScore := elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("90d").
-		Weight(4).
+		Weight(3).
 		Decay(0.55)
 
 	pastYearScore := elastic.NewGaussDecayFunction().
