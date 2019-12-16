@@ -11,7 +11,7 @@ import (
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/es/index"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/null"
 
 	"github.com/mitchellh/go-homedir"
@@ -35,8 +35,18 @@ SELECT c.id,
 	c.effective_amount, 
 	c.transaction_time, 
 	COALESCE(p.effective_amount,1) as certificate_amount, 
-	c.claim_id as claimId, 
-	c.value_as_json as value 
+	c.claim_id as claimId,
+	c.value_as_json as value,
+    c.title,
+    c.description,
+    c.release_time,
+    c.content_type,
+    c.is_cert_valid,
+    c.type,
+    c.frame_width,
+    c.frame_height,
+    c.duration,
+    c.is_nsfw
 FROM claim c LEFT JOIN claim p on p.claim_id = c.publisher_id 
 WHERE c.id > ? 
 AND c.modified_at >= ? 
@@ -84,7 +94,17 @@ func SyncClaims() {
 				&claim.TransactionTimeUnix,
 				&claim.ChannelEffectiveAmount,
 				&claim.ClaimID,
-				&claim.JSONValue)
+				&claim.JSONValue,
+				&claim.Title,
+				&claim.Description,
+				&claim.ReleaseTimeUnix,
+				&claim.ContentType,
+				&claim.CertValid,
+				&claim.ClaimType,
+				&claim.FrameWidth,
+				&claim.FrameHeight,
+				&claim.Duration,
+				&claim.NSFW)
 			if err != nil {
 				logrus.Error(err)
 			}
@@ -104,6 +124,7 @@ func SyncClaims() {
 				continue
 			}
 			claim.TransactionTime = time.Unix(int64(claim.TransactionTimeUnix), 0)
+			claim.ReleaseTime = time.Unix(int64(claim.ReleaseTimeUnix.Uint64), 0)
 			if claim.BidState == "Spent" || claim.BidState == "Expired" {
 				claim.Delete(p)
 			} else {
@@ -166,10 +187,17 @@ type claimInfo struct {
 	ChannelEffectiveAmount uint64                 `json:"certificate_amount"`
 	JSONValue              null.String            `json:"-"`
 	Value                  map[string]interface{} `json:"value"`
-	SuggestName            struct {
-		Input  string `json:"input"`
-		Weight uint64 `json:"weight"`
-	} `json:"suggest_name"`
+	Title                  null.String            `json:"title,omitempty"`
+	Description            null.String            `json:"description,omitempty"`
+	ReleaseTimeUnix        null.Uint64            `json:"-"`
+	ReleaseTime            time.Time              `json:"release_time"`
+	ContentType            null.String            `json:"content_type,omitempty"`
+	CertValid              bool                   `json:"cert_valid"`
+	ClaimType              null.String            `json:"claim_type,omitempty"`
+	FrameWidth             null.Int               `json:"frame_width,omitempty"`
+	FrameHeight            null.Int               `json:"frame_height,omitempty"`
+	Duration               null.Int               `json:"duration,omitempty"`
+	NSFW                   bool                   `json:"nsfw"`
 }
 
 func (c claimInfo) Add(p *elastic.BulkProcessor) {
