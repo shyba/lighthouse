@@ -36,7 +36,8 @@ func AutoComplete(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: errors.Err(err), Status: http.StatusBadRequest}
 	}
-	acRequest.S = strings.Replace(acRequest.S, "/", "\\/", -1)
+	replacer := strings.NewReplacer("/", "\\/", "[", "\\[", "]", "\\]")
+	acRequest.S = replacer.Replace(acRequest.S)
 
 	mmATD := elastic.NewMultiMatchQuery(acRequest.S).
 		Type("phrase_prefix").Slop(5).MaxExpansions(50).
@@ -79,7 +80,10 @@ func AutoComplete(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: errors.Err(err)}
 	}
-	results := make([]map[string]interface{}, 0)
+	type lighthouseResult struct {
+		Name string `json:"name"`
+	}
+	names := make([]string, 0, len(searchResults.Hits.Hits))
 	for _, hit := range searchResults.Hits.Hits {
 		if hit.Source != nil {
 			data, err := hit.Source.MarshalJSON()
@@ -87,16 +91,16 @@ func AutoComplete(r *http.Request) api.Response {
 				logrus.Error(err)
 				continue
 			}
-			result := map[string]interface{}{}
+			result := lighthouseResult{}
 			err = json.Unmarshal(data, &result)
 			if err != nil {
 				logrus.Error(err)
 				continue
 			}
-			results = append(results, result)
+			names = append(names, result.Name)
 		}
 	}
 
-	return api.Response{Data: results}
+	return api.Response{Data: names}
 
 }

@@ -23,7 +23,7 @@ const (
 func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	base := elastic.NewBoolQuery()
 	if exact := r.exactMatchQueries(); exact != nil {
-		//base.Must(exact)
+		base.Must(exact)
 	}
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
