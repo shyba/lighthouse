@@ -28,7 +28,6 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
 	base.Should(controllingBoostQuery())
-	base.Must(elastic.NewBoolQuery())
 	base.Should(r.matchPhraseClaimName())
 	base.Should(r.matchClaimName())
 	base.Should(r.containsTermName())
@@ -69,7 +68,7 @@ func splitATDQueries() []elastic.Query {
 	return nil
 }
 
-func (r searchRequest) atdSearch() *elastic.NestedQuery {
+func (r searchRequest) atdSearch() *elastic.BoolQuery {
 	b := elastic.NewBoolQuery()
 
 	//Add queries for splits of the search query A, AB, ABC, ABCD
@@ -78,38 +77,30 @@ func (r searchRequest) atdSearch() *elastic.NestedQuery {
 	// Contains search in Author, Title, Description
 	b.Should(elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("contains_atd").
-		Field(authorPath).
-		Field(titlePath).
-		Field(descPath).
+		//Field(authorPath).
+		Field("title").
+		Field("description").
 		Boost(1))
 
-	// Match search terms - Author
-	b.Should(elastic.NewMatchQuery(authorPath, r.washed()).
-		QueryName("match_term_author").
-		Boost(3))
 	// Match search terms - Title
-	b.Should(elastic.NewMatchQuery(titlePath, r.washed()).
+	b.Should(elastic.NewMatchQuery("title", r.washed()).
 		QueryName("match_term_title").
 		Boost(3))
 	// Match search terms - Description
-	b.Should(elastic.NewMatchQuery(descPath, r.washed()).
+	b.Should(elastic.NewMatchQuery("description", r.washed()).
 		QueryName("match_term_desc").
 		Boost(3))
 
-	// Match Phrase search - Author
-	b.Should(elastic.NewMatchPhrasePrefixQuery(authorPath, r.escaped()).
-		QueryName("matchphrase_term_author").
-		Boost(2))
 	// Match Phrase search - Title
-	b.Should(elastic.NewMatchPhrasePrefixQuery(titlePath, r.escaped()).
+	b.Should(elastic.NewMatchPhrasePrefixQuery("title", r.escaped()).
 		QueryName("matchphrase_term_title").
 		Boost(2))
 	// Match Phrase search - Description
-	b.Should(elastic.NewMatchPhrasePrefixQuery(descPath, r.escaped()).
+	b.Should(elastic.NewMatchPhrasePrefixQuery("description", r.escaped()).
 		QueryName("matchphrase_term_desc").
 		Boost(2))
 
-	return elastic.NewNestedQuery("value", b)
+	return b
 }
 
 func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
@@ -169,20 +160,19 @@ func (r searchRequest) exactMatchQueries() elastic.Query {
 		return nil
 	}
 
-	b := elastic.NewBoolQuery()
 	exactMatches := regex.FindAllStringSubmatch(r.S, -1)
 	if len(exactMatches) == 0 {
 		return nil
 	}
 	for _, exactMatch := range exactMatches {
+		exact.Should(elastic.NewMatchPhraseQuery("channel", exactMatch[len(exactMatch)-1]))
 		exact.Should(elastic.NewMatchPhraseQuery("name", exactMatch[len(exactMatch)-1]))
-		b.Should(elastic.NewMatchPhraseQuery(authorPath, exactMatch[len(exactMatch)-1]).QueryName("exact-author"))
-		b.Should(elastic.NewMatchPhraseQuery(titlePath, exactMatch[len(exactMatch)-1]).QueryName("exact-title"))
-		b.Should(elastic.NewMatchPhraseQuery(descPath, exactMatch[len(exactMatch)-1]).QueryName("exact-description"))
+		exact.Should(elastic.NewMatchPhraseQuery("title", exactMatch[len(exactMatch)-1]).QueryName("exact-title"))
+		exact.Should(elastic.NewMatchPhraseQuery("description", exactMatch[len(exactMatch)-1]).QueryName("exact-description"))
 
 	}
-	nested := elastic.NewNestedQuery("value", b)
-	return exact.Should(nested)
+	//nested := elastic.NewNestedQuery("value", b)
+	return exact
 }
 
 func channelWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
@@ -218,9 +208,7 @@ func (r searchRequest) getFilters() []elastic.Query {
 	}
 
 	if len(filters) > 0 {
-		must := elastic.NewBoolQuery().Must(filters...)
-		nested := elastic.NewNestedQuery("value", must)
-		return []elastic.Query{nested, bidstateFilter}
+		return append(filters, bidstateFilter)
 
 	} else {
 		return []elastic.Query{bidstateFilter}
@@ -238,17 +226,15 @@ var contains = func(slice []string, value string) bool {
 }
 var possibleMediaTypes = []string{"audio", "video", "text", "application", "image"}
 
-const contentTypePath = "value.Claim.stream.source.contentType"
-
 func (r searchRequest) mediaTypeFilter() []elastic.Query {
 	if r.MediaType != nil {
 		mediaTypes := strings.Split(util.StrFromPtr(r.MediaType), ",")
 		var queries []elastic.Query
 		for _, t := range mediaTypes {
 			if contains(possibleMediaTypes, t) && t != "" {
-				queries = append(queries, elastic.NewPrefixQuery(contentTypePath+".keyword", t+"/"))
+				queries = append(queries, elastic.NewPrefixQuery("content_type.keyword", t+"/"))
 			} else if t == "cad" {
-				queries = append(queries, elastic.NewTermsQuery(contentTypePath+".keyword", cadTypes...))
+				queries = append(queries, elastic.NewTermsQuery("content_type.keyword", cadTypes...))
 			}
 		}
 		return queries
@@ -256,12 +242,12 @@ func (r searchRequest) mediaTypeFilter() []elastic.Query {
 	return nil
 }
 
-var claimTypeMap = map[string]string{"channel": "certificateType", "file": "streamType"}
+var claimTypeMap = map[string]string{"channel": "channel", "file": "stream"}
 
 func (r searchRequest) claimTypeFilter() *elastic.MatchQuery {
 	if r.ClaimType != nil {
 		if t, ok := claimTypeMap[util.StrFromPtr(r.ClaimType)]; ok {
-			return elastic.NewMatchQuery("value.Claim.claimType", t)
+			return elastic.NewMatchQuery("claim_type", t)
 		}
 	}
 	return nil
@@ -274,14 +260,14 @@ func (r searchRequest) contentTypeFilter() *elastic.TermsQuery {
 		for i, t := range contentTypeStr {
 			contentTypes[i] = t
 		}
-		return elastic.NewTermsQuery(contentTypePath, contentTypes...)
+		return elastic.NewTermsQuery("content_type", contentTypes...)
 	}
 	return nil
 }
 
 func (r searchRequest) nsfwFilter() *elastic.MatchQuery {
 	if r.NSFW != nil {
-		return elastic.NewMatchQuery(nsfwPath, r.NSFW)
+		return elastic.NewMatchQuery("nsfw", r.NSFW)
 	}
 	return nil
 }

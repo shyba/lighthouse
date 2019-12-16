@@ -56,7 +56,7 @@ func Search(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: errors.Err("%s: for query -s %s", err, t)}
 	}
-	sourceContext := elastic.NewFetchSourceContext(true)
+	sourceContext := elastic.NewFetchSourceContext(true).Exclude("value")
 	if searchRequest.Source == nil {
 		sourceContext = sourceContext.Include("name", "claimId")
 	}
