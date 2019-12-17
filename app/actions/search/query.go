@@ -13,10 +13,15 @@ import (
 
 func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	base := elastic.NewBoolQuery()
+
+	//Things that should bee scaled once a match is found
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
 	base.Should(releaseTimeFuncScoreQuery())
 	base.Should(controllingBoostQuery())
+
+	//The minimum things that should match for it to be considered a valid result.
+	//Anything in here will allow it to be scaled and returned
 	min := elastic.NewBoolQuery()
 	min.Should(r.matchPhraseClaimName())
 	min.Should(r.matchClaimName())
@@ -29,7 +34,10 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	min.Should(r.matchDescription())
 	min.Should(r.matchPrefixDescription())
 	min.Should(r.matchPhraseDescription())
-	base.Must(min) //At a minimum, one of these.
+	min.Should(r.matchCompressedChannelName())
+	base.Must(min)
+
+	//Any parameters that should filter but not impact scores
 	base.Filter(r.getFilters()...)
 
 	return base
@@ -77,19 +85,19 @@ func (r searchRequest) titleContains() *elastic.QueryStringQuery {
 
 func (r searchRequest) matchTitle() *elastic.MatchQuery {
 	return elastic.NewMatchQuery("title", r.washed()).
-		QueryName("match_title").
+		QueryName("title-match").
 		Boost(3)
 }
 
 func (r searchRequest) matchPrefixTitle() *elastic.MatchPhrasePrefixQuery {
 	return elastic.NewMatchPhrasePrefixQuery("title", r.escaped()).
-		QueryName("matchphraseprefix_title").
+		QueryName("title-match-phrase-prefix").
 		Boost(2)
 }
 
 func (r searchRequest) matchPhraseTitle() *elastic.MatchPhraseQuery {
 	return elastic.NewMatchPhraseQuery("title", r.escaped()).
-		QueryName("matchphrase_title").
+		QueryName("title-match-phrase").
 		Boost(2)
 }
 
@@ -102,20 +110,27 @@ func (r searchRequest) descriptionContains() *elastic.QueryStringQuery {
 
 func (r searchRequest) matchDescription() *elastic.MatchQuery {
 	return elastic.NewMatchQuery("description", r.washed()).
-		QueryName("match_desc").
+		QueryName("description-match").
 		Boost(3)
 }
 
 func (r searchRequest) matchPrefixDescription() *elastic.MatchPhrasePrefixQuery {
 	return elastic.NewMatchPhrasePrefixQuery("description", r.escaped()).
-		QueryName("matchphraseprefix_description").
+		QueryName("description-match-phrase-prefix").
 		Boost(2)
 }
 
 func (r searchRequest) matchPhraseDescription() *elastic.MatchPhraseQuery {
 	return elastic.NewMatchPhraseQuery("description", r.escaped()).
-		QueryName("matchphrase_description").
+		QueryName("description-match-phrase").
 		Boost(2)
+}
+
+func (r searchRequest) matchCompressedChannelName() *elastic.MatchQuery {
+	compressed := "@" + strings.Replace(r.S, " ", "", -1)
+	return elastic.NewMatchQuery("name", compressed).
+		QueryName("name-match-@compressed").
+		Boost(15)
 }
 
 func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
@@ -124,7 +139,7 @@ func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
 		boost = boost * 10
 	}
 	return elastic.NewMatchPhraseQuery("name", r.S).
-		QueryName("match_phrase_claim_name*10").
+		QueryName("name-match-phrase").
 		Boost(boost)
 }
 
@@ -132,21 +147,26 @@ func (r searchRequest) matchClaimName() *elastic.MatchQuery {
 	boost := 10.0
 	if r.S[0] == '@' {
 		boost = boost * 10
+		return elastic.NewMatchQuery("name", r.S).
+			QueryName("name-match-@boost").
+			Boost(boost * 10)
 	}
+
 	return elastic.NewMatchQuery("name", r.S).
-		QueryName("match_claim_name*10").
+		QueryName("name-match").
 		Boost(boost)
+
 }
 
 func (r searchRequest) containsTermName() *elastic.QueryStringQuery {
 	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
-		QueryName("contains_term_name*3").
+		QueryName("name-contains").
 		Field("name").
 		Boost(5)
 }
 
 func (r searchRequest) exactMatchQueries() elastic.Query {
-	exact := elastic.NewBoolQuery().QueryName("exact-match")
+	exact := elastic.NewBoolQuery()
 
 	regex, err := regexp.Compile(`"([^"]*)"$`)
 	if err != nil {
@@ -158,11 +178,13 @@ func (r searchRequest) exactMatchQueries() elastic.Query {
 	if len(exactMatches) == 0 {
 		return nil
 	}
+
 	for _, exactMatch := range exactMatches {
-		exact.Should(elastic.NewMatchPhraseQuery("channel", exactMatch[len(exactMatch)-1]))
-		exact.Should(elastic.NewMatchPhraseQuery("name", exactMatch[len(exactMatch)-1]))
-		exact.Should(elastic.NewMatchPhraseQuery("title", exactMatch[len(exactMatch)-1]).QueryName("exact-title"))
-		exact.Should(elastic.NewMatchPhraseQuery("description", exactMatch[len(exactMatch)-1]).QueryName("exact-description"))
+		v := exactMatch[len(exactMatch)-1]
+		exact.Should(elastic.NewMatchPhraseQuery("channel", v).QueryName("channel-exact"))
+		exact.Should(elastic.NewMatchPhraseQuery("name", v).QueryName("name-exact"))
+		exact.Should(elastic.NewMatchPhraseQuery("title", v).QueryName("title-exact"))
+		exact.Should(elastic.NewMatchPhraseQuery("description", v).QueryName("description-exact"))
 
 	}
 	//nested := elastic.NewNestedQuery("value", b)
@@ -202,6 +224,10 @@ func (r searchRequest) getFilters() []elastic.Query {
 
 	if channel := r.channelFilter(); channel != nil {
 		filters = append(filters, channel)
+	}
+
+	if claim := r.claimIDFilter(); claim != nil {
+		filters = append(filters, claim)
 	}
 
 	if len(filters) > 0 {
@@ -283,9 +309,16 @@ func (r searchRequest) channelIDFilter() *elastic.MatchQuery {
 func (r searchRequest) channelFilter() *elastic.BoolQuery {
 	if r.Channel != nil {
 		b := elastic.NewBoolQuery()
-		channel := elastic.NewQueryStringQuery(r.escaped()).
+		channel := elastic.NewQueryStringQuery(util.StrFromPtr(r.Channel)).
 			Field("channel")
 		return b.Must(channel)
+	}
+	return nil
+}
+
+func (r searchRequest) claimIDFilter() *elastic.MatchQuery {
+	if r.ClaimID != nil {
+		return elastic.NewMatchQuery("claimId", r.ClaimID)
 	}
 	return nil
 }

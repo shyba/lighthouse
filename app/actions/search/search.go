@@ -28,9 +28,10 @@ type searchRequest struct {
 	ClaimType   *string `json:"claimType"`
 	NSFW        *bool
 	//Debug params
-	Score  *bool
-	Source *bool
-	Debug  *bool
+	ClaimID *string
+	Score   *bool
+	Source  *bool
+	Debug   *bool
 }
 
 func Search(r *http.Request) api.Response {

@@ -9,8 +9,7 @@ import (
 const effectiveFactor = 0.0000000000001
 
 func controllingBoostQuery() *elastic.MatchQuery {
-	return elastic.NewMatchQuery("bid_state", "Controlling").
-		QueryName("controlling_boost*20")
+	return elastic.NewMatchQuery("bid_state", "Controlling")
 }
 
 func claimWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
