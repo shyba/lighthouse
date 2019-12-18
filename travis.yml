@@ -23,10 +23,12 @@ before_script:
 script:
   #Fetch master to be used in deploy condition to prevent deploying on old commits.
   - git fetch origin master:master
-  - ./build.sh
+  - ./scripts/build.sh
   - go test ./...
-  #- ./app/scripts/lint.sh
-  - ./bin/lighthouse serve &
+  - ./scripts/lint.sh
+  - ./bin/lighthouse test &
+  - sleep 10s
+  - "curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' http://localhost:50005/"
   - go mod tidy
   - git diff --exit-code
 

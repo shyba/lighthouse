@@ -27,11 +27,11 @@ export VERSIONSHORT="${TRAVIS_COMMIT:-"$(git describe --tags --always --dirty)"}
 export VERSIONLONG="${TRAVIS_COMMIT:-"$(git describe --tags --always --dirty --long)"}"
 export COMMITMSG="$(echo ${TRAVIS_COMMIT_MESSAGE:-"$(git show -s --format=%s)"} | tr -d '"' | head -n 1)"
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o "./bin/lighthouse" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
-echo "== Done building linux version $("$DIR/bin/lighthouse" version) =="
-CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o "./bin/lighthouse-darwin" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
-echo "== Done building darwin version $("$DIR/bin/lighthouse-darwin" version) =="
-CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o "./bin/lighthouse.exe" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
-echo "== Done building windows version $("$DIR/bin/lighthouse.exe" version) =="
+#echo "== Done building linux version $("$DIR/bin/lighthouse" version) =="
+#CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o "./bin/lighthouse-darwin" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
+#echo "== Done building darwin version $("$DIR/bin/lighthouse-darwin" version) =="
+#CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o "./bin/lighthouse.exe" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
+#echo "== Done building windows version $("$DIR/bin/lighthouse.exe" version) =="
 
 echo "$(git describe --tags --always --dirty)" > ./bin/lighthouse.txt
 chmod +x ./bin/lighthouse

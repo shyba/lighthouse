@@ -18,7 +18,7 @@ require (
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/olivere/elastic v6.2.26+incompatible
+	github.com/olivere/elastic v6.2.26+incompatible // indirect
 	github.com/pkg/profile v1.4.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5

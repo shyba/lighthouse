@@ -10,8 +10,8 @@ import (
 
 	"github.com/lbryio/lbry.go/v2/extras/api"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
-
 	v "github.com/lbryio/ozzo-validation"
+
 	"github.com/sirupsen/logrus"
 	"gopkg.in/olivere/elastic.v6"
 )
@@ -22,6 +22,7 @@ type searchRequest struct {
 	From      *int
 	Channel   *string
 	ChannelID *string
+	RelatedTo *string
 	//Should change these calls in the app
 	ContentType *string `json:"contentType"`
 	MediaType   *string `json:"mediaType"`
@@ -34,6 +35,7 @@ type searchRequest struct {
 	Debug   *bool
 }
 
+// Search API returns the name and claim id of the results based on the query passed.
 func Search(r *http.Request) api.Response {
 
 	searchRequest := searchRequest{}

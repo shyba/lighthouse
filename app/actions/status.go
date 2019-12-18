@@ -25,6 +25,7 @@ type status struct {
 	ClaimStats      elastic.IndicesStatsResponse
 }
 
+// Status returns the status of lighthouse including version information and elastic search state.
 func Status(r *http.Request) api.Response {
 	health, err := es.Client.CatHealth().Do(context.Background())
 	if err != nil {

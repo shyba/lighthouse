@@ -11,6 +11,7 @@ import (
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/es/index"
 
+	"github.com/lbryio/lbry.go/extras/util"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/null"
 
@@ -26,7 +27,12 @@ var maxClaimsToProcessPerIteration = 5000
 // SyncStateDir holds the direction location of where to store the sync state json file.
 var SyncStateDir string
 
-const query = `
+func query(channelID *string) string {
+	channelFilter := ""
+	if channelID != nil {
+		channelFilter = ` AND p.claim_id = "` + util.StrFromPtr(channelID) + `" `
+	}
+	var query = `
 SELECT c.id, 
 	c.name, 
 	p.name as channel, 
@@ -48,17 +54,20 @@ SELECT c.id,
     c.duration,
     c.is_nsfw
 FROM claim c LEFT JOIN claim p on p.claim_id = c.publisher_id 
-WHERE c.id > ? 
+WHERE c.id > ? ` + channelFilter + `
 AND c.modified_at >= ? 
 ORDER BY c.id 
 LIMIT ?`
+	return query
+}
 
-func SyncClaims() {
+// SyncClaims uses Chainquery to sync the claim information to the elasticsearch db.
+func SyncClaims(channelID *string) {
 	if claimSyncRunning {
 		return
 	}
 	claimSyncRunning = true
-	defer endClaimSync()
+	defer endClaimSync(channelID)
 	logrus.Debugf("running claim sync job...")
 	syncState, err := loadSynState()
 	if err != nil {
@@ -68,7 +77,7 @@ func SyncClaims() {
 	if syncState.StartSyncTime.IsZero() || syncState.LastID == 0 {
 		syncState.StartSyncTime = time.Now()
 	}
-	p, err := es.Client.BulkProcessor().Name("ClaimSync").After(AfterBulkSend).Workers(4).Do(context.Background())
+	p, err := es.Client.BulkProcessor().Name("ClaimSync").After(afterBulkSend).Workers(4).Do(context.Background())
 	if err != nil {
 		logrus.Error(errors.Err(err))
 		return
@@ -76,7 +85,7 @@ func SyncClaims() {
 	finished := false
 	iteration := 0
 	for !finished {
-		rows, err := db.Chainquery.Query(query, syncState.LastID, syncState.LastSyncTime, batchSize)
+		rows, err := db.Chainquery.Query(query(channelID), syncState.LastID, syncState.LastSyncTime, batchSize)
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -129,9 +138,9 @@ func SyncClaims() {
 				claim.ReleaseTime = claim.TransactionTime
 			}
 			if claim.BidState == "Spent" || claim.BidState == "Expired" {
-				claim.Delete(p)
+				claim.delete(p)
 			} else {
-				claim.Add(p)
+				claim.add(p)
 			}
 
 		}
@@ -161,7 +170,7 @@ func SyncClaims() {
 	}
 }
 
-func AfterBulkSend(executionId int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
+func afterBulkSend(executionID int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
 	if response.Errors {
 		for _, failure := range response.Failed() {
 			logrus.Error(failure.Error)
@@ -169,11 +178,11 @@ func AfterBulkSend(executionId int64, requests []elastic.BulkableRequest, respon
 	}
 }
 
-func endClaimSync() {
+func endClaimSync(channelID *string) {
 	claimSyncRunning = false
 	syncState, _ := loadSynState()
 	if syncState != nil && syncState.LastID != 0 {
-		go SyncClaims()
+		go SyncClaims(channelID)
 	}
 }
 
@@ -203,12 +212,12 @@ type claimInfo struct {
 	NSFW                   bool                   `json:"nsfw"`
 }
 
-func (c claimInfo) Add(p *elastic.BulkProcessor) {
+func (c claimInfo) add(p *elastic.BulkProcessor) {
 	r := elastic.NewBulkIndexRequest().Index(index.Claims).Type(index.ClaimType).Id(c.ClaimID).Doc(c)
 	p.Add(r)
 }
 
-func (c claimInfo) Delete(p *elastic.BulkProcessor) {
+func (c claimInfo) delete(p *elastic.BulkProcessor) {
 	r := elastic.NewBulkDeleteRequest().Index(index.Claims).Type(index.ClaimType).Id(c.ClaimID)
 	p.Add(r)
 }

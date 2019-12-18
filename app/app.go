@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/lbryio/lighthouse/app/es/index"
-	"github.com/lbryio/lighthouse/app/jobs"
-
 	"github.com/lbryio/lighthouse/app/actions"
 	"github.com/lbryio/lighthouse/app/es"
+	"github.com/lbryio/lighthouse/app/es/index"
 	"github.com/lbryio/lighthouse/app/util"
 
 	"github.com/lbryio/lbry.go/v2/extras/api"
@@ -21,13 +19,13 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
+//DoYourThing launches the app
 func DoYourThing() {
-	InitElasticSearch()
-	go jobs.SyncClaims()
-	InitApiServer()
+	initElasticSearch()
+	initAPIServer()
 }
 
-func InitElasticSearch() {
+func initElasticSearch() {
 	opts := []elastic.ClientOptionFunc{elastic.SetErrorLog(logrus.StandardLogger())}
 	if es.ElasticSearchURL != "" {
 		opts = append(opts, elastic.SetURL(es.ElasticSearchURL))
@@ -58,10 +56,10 @@ func InitElasticSearch() {
 	}
 }
 
-func InitApiServer() {
+func initAPIServer() {
 	host := viper.GetString("host")
 	port := viper.GetInt("port")
-	logrus.Info("API Server started")
+	logrus.Infof("API Server started @ %s", "http://"+host+":"+viper.GetString("port")+"/search?s=test")
 	hs := make(map[string]string)
 	hs["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
 	hs["Content-Type"] = "application/json; charset=utf-8; application/x-www-form-urlencoded"

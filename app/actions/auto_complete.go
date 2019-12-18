@@ -25,6 +25,7 @@ type autoCompleteRequest struct {
 	Debug  *bool
 }
 
+// AutoComplete returns the name of claims that it matches against for auto completion.
 func AutoComplete(r *http.Request) api.Response {
 	acRequest := autoCompleteRequest{}
 

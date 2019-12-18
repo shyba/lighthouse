@@ -20,13 +20,10 @@ To get autocomplete suggestions:
 ```
 https://lighthouse.lbry.com/autocomplete?s=stringtocomp
 ```
-[The full API documentation](https://lbryio.github.io/lighthouse/)
 
 ## Installation
 ### Prerequisites
-* [Node v8](https://nodejs.org/en/download/)
-* [Yarn](https://yarnpkg.com/en/docs/install)
-* [Elasticsearch](https://www.elastic.co/downloads/elasticsearch)
+* [Elasticsearch6.6](https://www.elastic.co/downloads/elasticsearch)
 
 
 >To get started you should clone the git:
@@ -35,17 +32,9 @@ git clone https://github.com/lbryio/lighthouse
 ```
 >Make sure elasticsearch is running and run (from the lighthouse dir):
 ```
-./gendb.sh
+./dev.sh
 ```
->Install dependencies:
-```
-npm run install --production=false
-```
->Build and run Lighthouse:
-```
-npm run prod
-```
->You are now up and running! You can connect to lighthouse at http://localhost:50005, api documentation is [here](https://lbryio.github.io/lighthouse/).
+>You are now up and running! You can connect to lighthouse at http://localhost:50005.
 Lighthouse will continue syncing in the background. It usually takes ~15 minutes before all claims are up to date in the database.
 
 ## Contributing
@@ -53,7 +42,7 @@ Lighthouse will continue syncing in the background. It usually takes ~15 minutes
 Contributions to this project are welcome, encouraged, and compensated. For more details, see [lbry.com/faq/contributing](https://lbry.com/faq/contributing)
 
 ## License
-This project is MIT Licensed &copy; [LBRYio, Filip Nyquist](https://github.com/lbryio)
+This project is MIT Licensed &copy; [LBRYio](https://github.com/lbryio)
 
 ## Security
 

@@ -7,8 +7,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Chainquery is the sql connection to the chainquery database.
 var Chainquery *sqlx.DB
 
+// Init inits the database connection to Chainquery on startup.
 func Init(dsn string) {
 	var err error
 	Chainquery, err = dbInitConnection(dsn, "mysql")

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// InitializeConfiguration inits the base configuration of lighthouse
 func InitializeConfiguration() {
 	config, err := env.NewWithEnvVars()
 	if err != nil {

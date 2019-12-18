@@ -9,17 +9,19 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/orderedmap"
 )
 
+// Routes holds a map of api handlers with the key being the route
 type Routes struct {
 	m *orderedmap.Map
 }
 
-func (r *Routes) Set(key string, h api.Handler) {
+func (r *Routes) set(key string, h api.Handler) {
 	if r.m == nil {
 		r.m = orderedmap.New()
 	}
 	r.m.Set(key, h)
 }
 
+// Each applies to a function of the type specified to each of the Routes
 func (r *Routes) Each(f func(string, http.Handler)) {
 	if r.m == nil {
 		return
@@ -30,21 +32,15 @@ func (r *Routes) Each(f func(string, http.Handler)) {
 	}
 }
 
-func (r *Routes) Walk(f func(string, http.Handler) http.Handler) {
-	if r.m == nil {
-		return
-	}
-	for _, k := range r.m.Keys() {
-		a, _ := r.m.Get(k)
-		r.m.Set(k, f(k, a.(http.Handler)))
-	}
-}
-
+// GetRoutes returns the set of Routes specified for the API server
 func GetRoutes() *Routes {
 	routes := Routes{}
-	routes.Set("/search", search.Search)
-	routes.Set("/autocomplete", AutoComplete)
-	routes.Set("/status", Status)
+	routes.set("/", Root)
+	routes.set("/test", Test)
+
+	routes.set("/search", search.Search)
+	routes.set("/autocomplete", AutoComplete)
+	routes.set("/status", Status)
 
 	return &routes
 }

@@ -4,10 +4,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/lbryio/lighthouse/app/es/index"
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/util"
+
+	"github.com/sirupsen/logrus"
 	"gopkg.in/olivere/elastic.v6"
 )
 
@@ -78,12 +80,21 @@ func (r searchRequest) washed() string {
 }
 
 func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
-	return elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
+	mlt := elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
 		Field("name").
 		Field("title").
 		Field("description").
-		LikeText(r.S).MinTermFreq(1).MaxQueryTerms(10).
-		Boost(20)
+		MinTermFreq(1).
+		MaxQueryTerms(10)
+	if r.RelatedTo != nil {
+		item := elastic.NewMoreLikeThisQueryItem().
+			Index(index.Claims).
+			Id(util.StrFromPtr(r.RelatedTo))
+		return mlt.LikeItems(item).
+			Field("channel").
+			Boost(20)
+	}
+	return mlt.LikeText(r.S)
 }
 
 func (r searchRequest) titleContains() *elastic.QueryStringQuery {
@@ -243,9 +254,8 @@ func (r searchRequest) getFilters() []elastic.Query {
 	if len(filters) > 0 {
 		return append(filters, bidstateFilter)
 
-	} else {
-		return []elastic.Query{bidstateFilter}
 	}
+	return []elastic.Query{bidstateFilter}
 }
 
 var cadTypes = []interface{}{"SKP", "simplify3d_stl"}

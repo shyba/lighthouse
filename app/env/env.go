@@ -6,6 +6,7 @@ import (
 	e "github.com/caarlos0/env"
 )
 
+// Config holds the environment configuration used by lighthouse.
 type Config struct {
 	ChainQueryDsn    string `env:"CHAINQUERY_DSN"`
 	SyncStateDir     string `env:"SYNCSTATEDIR"`

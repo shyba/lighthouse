@@ -1,8 +1,11 @@
 package index
 
 const (
-	Claims       = "claims"
-	ClaimType    = "claim"
+	// Claims is the name used for the claims index of elastic search
+	Claims = "claims"
+	// ClaimType is the name used for the type of documents stored in the claims index
+	ClaimType = "claim"
+	// ClaimMapping is the mapping used by lighthouse and is initialized if the claims index does not exist on startup.
 	ClaimMapping = `
 {
   "settings": {
