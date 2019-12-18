@@ -19,7 +19,7 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	//Things that should bee scaled once a match is found
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
-	//base.Should(releaseTimeFuncScoreQuery())
+	base.Should(releaseTimeFuncScoreQuery())
 	base.Should(controllingBoostQuery())
 
 	//The minimum things that should match for it to be considered a valid result.
