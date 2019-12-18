@@ -17,12 +17,13 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	//Things that should bee scaled once a match is found
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
-	base.Should(releaseTimeFuncScoreQuery())
+	//base.Should(releaseTimeFuncScoreQuery())
 	base.Should(controllingBoostQuery())
 
 	//The minimum things that should match for it to be considered a valid result.
-	//Anything in here will allow it to be scaled and returned
+	//Anything in here will allow it txo be scaled and returned
 	min := elastic.NewBoolQuery()
+	min.Should(r.moreLikeThis())
 	min.Should(r.matchPhraseClaimName())
 	min.Should(r.matchClaimName())
 	min.Should(r.containsTermName())
@@ -74,6 +75,15 @@ func (r searchRequest) escaped() string {
 
 func (r searchRequest) washed() string {
 	return r.S
+}
+
+func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
+	return elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
+		Field("name").
+		Field("title").
+		Field("description").
+		LikeText(r.S).MinTermFreq(1).MaxQueryTerms(10).
+		Boost(20)
 }
 
 func (r searchRequest) titleContains() *elastic.QueryStringQuery {
