@@ -132,7 +132,7 @@ func SyncClaims(channelID *string) {
 				logrus.Error("Failed to process claim ", claim.ClaimID, " due to missing value")
 				continue
 			}
-			claim.TransactionTime = time.Unix(int64(claim.TransactionTimeUnix), 0)
+			claim.TransactionTime = time.Unix(int64(claim.TransactionTimeUnix.Uint64), 0)
 			claim.ReleaseTime = time.Unix(int64(claim.ReleaseTimeUnix.Uint64), 0)
 			if claim.ReleaseTimeUnix.IsNull() {
 				claim.ReleaseTime = claim.TransactionTime
@@ -194,7 +194,7 @@ type claimInfo struct {
 	ChannelClaimID         null.String            `json:"channel_claim_id,omitempty"`
 	BidState               string                 `json:"bid_state"`
 	EffectiveAmount        uint64                 `json:"effective_amount"`
-	TransactionTimeUnix    uint64                 `json:"-"`
+	TransactionTimeUnix    null.Uint64            `json:"-"` //Could be null in mempool
 	TransactionTime        time.Time              `json:"transaction_time"`
 	ChannelEffectiveAmount uint64                 `json:"certificate_amount"`
 	JSONValue              null.String            `json:"-"`
