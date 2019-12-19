@@ -13,16 +13,12 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
-func (r searchRequest) NewQuery() *elastic.BoolQuery {
+func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
 	base := elastic.NewBoolQuery()
 
 	//Things that should bee scaled once a match is found
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
-	base.Should(releaseTime7dFuncScoreQuery())
-	base.Should(releaseTime30dFuncScoreQuery())
-	base.Should(releaseTime90dFuncScoreQuery())
-	base.Should(releaseTime1yFuncScoreQuery())
 	base.Should(controllingBoostQuery())
 
 	//The minimum things that should match for it to be considered a valid result.
@@ -46,8 +42,12 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 
 	//Any parameters that should filter but not impact scores
 	base.Filter(r.getFilters()...)
-
-	return base
+	return elastic.NewFunctionScoreQuery().ScoreMode("sum").
+		Query(base).
+		AddScoreFunc(releaseTime7dFuncScoreQuery()).
+		AddScoreFunc(releaseTime30dFuncScoreQuery()).
+		AddScoreFunc(releaseTime90dFuncScoreQuery()).
+		AddScoreFunc(releaseTime1yFuncScoreQuery())
 }
 
 func (r searchRequest) escaped() string {
@@ -87,7 +87,7 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 	mlt := elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
 		Field("name").
 		Field("title").
-		Field("description").
+		//Field("description").
 		MinTermFreq(2).
 		MaxQueryTerms(10)
 	if r.RelatedTo != nil {
@@ -96,7 +96,7 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 			Id(util.StrFromPtr(r.RelatedTo))
 		return mlt.LikeItems(item).
 			Field("channel").
-			Boost(10)
+			Boost(1)
 	}
 	return mlt.LikeText(r.S)
 }
@@ -332,7 +332,7 @@ func (r searchRequest) nsfwFilter() *elastic.MatchQuery {
 }
 
 func (r searchRequest) bidStateFilter() *elastic.BoolQuery {
-	return elastic.NewBoolQuery().MustNot(elastic.NewMatchQuery("bid_state", "Accepted"))
+	return elastic.NewBoolQuery().MustNot(elastic.NewMatchQuery("bid_state", "Expired"))
 }
 
 func (r searchRequest) channelIDFilter() *elastic.MatchQuery {
