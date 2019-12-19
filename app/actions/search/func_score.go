@@ -30,38 +30,50 @@ func channelWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
 	return elastic.NewFunctionScoreQuery().AddScoreFunc(score)
 }
 
-func releaseTimeFuncScoreQuery() *elastic.FunctionScoreQuery {
+func releaseTime7dFuncScoreQuery() *elastic.FunctionScoreQuery {
 	pastWeekScore := elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("7d").
-		Weight(5).
-		Decay(0.75)
+		Weight(10).
+		Decay(0.50)
 
+	return elastic.NewFunctionScoreQuery().
+		AddScoreFunc(pastWeekScore).MinScore(1.0)
+}
+
+func releaseTime30dFuncScoreQuery() *elastic.FunctionScoreQuery {
 	pastMonthScore := elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("30d").
-		Weight(4).
-		Decay(0.65)
+		Weight(8).
+		Decay(0.45)
 
+	return elastic.NewFunctionScoreQuery().
+		AddScoreFunc(pastMonthScore).MinScore(1.0)
+}
+
+func releaseTime90dFuncScoreQuery() *elastic.FunctionScoreQuery {
 	pastQuarterScore := elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("90d").
-		Weight(3).
-		Decay(0.55)
+		Weight(6).
+		Decay(0.40)
 
+	return elastic.NewFunctionScoreQuery().
+		AddScoreFunc(pastQuarterScore).MinScore(1.0)
+}
+
+func releaseTime1yFuncScoreQuery() *elastic.FunctionScoreQuery {
 	pastYearScore := elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("365d").
-		Weight(2).
-		Decay(0.45)
+		Weight(4).
+		Decay(0.35)
 
 	return elastic.NewFunctionScoreQuery().
-		AddScoreFunc(pastWeekScore).
-		AddScoreFunc(pastMonthScore).
-		AddScoreFunc(pastQuarterScore).
-		AddScoreFunc(pastYearScore)
+		AddScoreFunc(pastYearScore).MinScore(1.0)
 }

@@ -11,8 +11,8 @@ var scheduler *gocron.Scheduler
 // Start starts the jobs that run in the background after initialization
 func Start() {
 	scheduler = gocron.NewScheduler()
-
-	scheduler.Every(1).Minutes().Do(SyncClaims)
+	var channels *string
+	scheduler.Every(1).Minutes().Do(SyncClaims, channels)
 
 	cronRunning = scheduler.Start()
 }

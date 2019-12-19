@@ -19,7 +19,10 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	//Things that should bee scaled once a match is found
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
-	base.Should(releaseTimeFuncScoreQuery())
+	base.Should(releaseTime7dFuncScoreQuery())
+	base.Should(releaseTime30dFuncScoreQuery())
+	base.Should(releaseTime90dFuncScoreQuery())
+	base.Should(releaseTime1yFuncScoreQuery())
 	base.Should(controllingBoostQuery())
 
 	//The minimum things that should match for it to be considered a valid result.
@@ -28,14 +31,15 @@ func (r searchRequest) NewQuery() *elastic.BoolQuery {
 	min.Should(r.moreLikeThis())
 	min.Should(r.matchPhraseClaimName())
 	min.Should(r.matchClaimName())
-	min.Should(r.containsTermName())
+	min.Should(r.nameContains())
 	min.Should(r.titleContains())
 	min.Should(r.matchTitle())
-	min.Should(r.matchPrefixTitle())
+	//min.Should(r.matchPrefixTitle())
+	//min.Should(r.matchPrefixDescription())
+	//min.Should(r.matchPrefixName())
 	min.Should(r.matchPhraseTitle())
 	min.Should(r.descriptionContains())
 	min.Should(r.matchDescription())
-	min.Should(r.matchPrefixDescription())
 	min.Should(r.matchPhraseDescription())
 	min.Should(r.matchCompressedChannelName())
 	base.Must(min)
@@ -84,7 +88,7 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 		Field("name").
 		Field("title").
 		Field("description").
-		MinTermFreq(1).
+		MinTermFreq(2).
 		MaxQueryTerms(10)
 	if r.RelatedTo != nil {
 		item := elastic.NewMoreLikeThisQueryItem().
@@ -92,7 +96,7 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 			Id(util.StrFromPtr(r.RelatedTo))
 		return mlt.LikeItems(item).
 			Field("channel").
-			Boost(20)
+			Boost(10)
 	}
 	return mlt.LikeText(r.S)
 }
@@ -100,6 +104,8 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 func (r searchRequest) titleContains() *elastic.QueryStringQuery {
 	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("title-contains").
+		AnalyzeWildcard(true).
+		AllowLeadingWildcard(true).
 		Field("title").
 		Boost(1)
 }
@@ -107,38 +113,40 @@ func (r searchRequest) titleContains() *elastic.QueryStringQuery {
 func (r searchRequest) matchTitle() *elastic.MatchQuery {
 	return elastic.NewMatchQuery("title", r.washed()).
 		QueryName("title-match").
-		Boost(3)
+		Boost(1)
 }
 
 func (r searchRequest) matchPrefixTitle() *elastic.MatchPhrasePrefixQuery {
 	return elastic.NewMatchPhrasePrefixQuery("title", r.escaped()).
-		QueryName("title-match-phrase-prefix").
-		Boost(2)
+		QueryName("title-match-phrase-prefix").MaxExpansions(10).
+		Boost(10)
 }
 
 func (r searchRequest) matchPhraseTitle() *elastic.MatchPhraseQuery {
 	return elastic.NewMatchPhraseQuery("title", r.escaped()).
 		QueryName("title-match-phrase").
-		Boost(2)
+		Boost(3)
 }
 
 func (r searchRequest) descriptionContains() *elastic.QueryStringQuery {
 	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("description-contains").
 		Field("description").
+		AnalyzeWildcard(true).
+		AllowLeadingWildcard(true).
 		Boost(1)
 }
 
 func (r searchRequest) matchDescription() *elastic.MatchQuery {
 	return elastic.NewMatchQuery("description", r.washed()).
 		QueryName("description-match").
-		Boost(3)
+		Boost(1)
 }
 
 func (r searchRequest) matchPrefixDescription() *elastic.MatchPhrasePrefixQuery {
 	return elastic.NewMatchPhrasePrefixQuery("description", r.escaped()).
 		QueryName("description-match-phrase-prefix").
-		Boost(2)
+		Boost(1)
 }
 
 func (r searchRequest) matchPhraseDescription() *elastic.MatchPhraseQuery {
@@ -154,8 +162,14 @@ func (r searchRequest) matchCompressedChannelName() *elastic.MatchQuery {
 		Boost(15)
 }
 
+func (r searchRequest) matchPrefixName() *elastic.MatchPhrasePrefixQuery {
+	return elastic.NewMatchPhrasePrefixQuery("name", r.escaped()).
+		QueryName("name-match-phrase-prefix").
+		Boost(2)
+}
+
 func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
-	boost := 2.0
+	boost := 3.0
 	if r.S[0] == '@' {
 		boost = boost * 10
 	}
@@ -165,7 +179,7 @@ func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
 }
 
 func (r searchRequest) matchClaimName() *elastic.MatchQuery {
-	boost := 10.0
+	boost := 1.0
 	if r.S[0] == '@' {
 		boost = boost * 10
 		return elastic.NewMatchQuery("name", r.S).
@@ -179,11 +193,13 @@ func (r searchRequest) matchClaimName() *elastic.MatchQuery {
 
 }
 
-func (r searchRequest) containsTermName() *elastic.QueryStringQuery {
+func (r searchRequest) nameContains() *elastic.QueryStringQuery {
 	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("name-contains").
+		AnalyzeWildcard(true).
+		AllowLeadingWildcard(true).
 		Field("name").
-		Boost(5)
+		Boost(1)
 }
 
 func (r searchRequest) exactMatchQueries() elastic.Query {
