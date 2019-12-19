@@ -25,14 +25,11 @@ func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
 	//Anything in here will allow it txo be scaled and returned
 	min := elastic.NewBoolQuery()
 	min.Should(r.moreLikeThis())
-	min.Should(r.matchPhraseClaimName())
-	min.Should(r.matchClaimName())
+	min.Should(r.matchPhraseName())
+	min.Should(r.matchName())
 	min.Should(r.nameContains())
 	min.Should(r.titleContains())
 	min.Should(r.matchTitle())
-	//min.Should(r.matchPrefixTitle())
-	//min.Should(r.matchPrefixDescription())
-	//min.Should(r.matchPrefixName())
 	min.Should(r.matchPhraseTitle())
 	min.Should(r.descriptionContains())
 	min.Should(r.matchDescription())
@@ -42,8 +39,10 @@ func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
 
 	//Any parameters that should filter but not impact scores
 	base.Filter(r.getFilters()...)
-	return elastic.NewFunctionScoreQuery().ScoreMode("sum").
+	return elastic.NewFunctionScoreQuery().
+		ScoreMode("sum").
 		Query(base).
+		//Boosting overall relevance over time
 		AddScoreFunc(releaseTime7dFuncScoreQuery()).
 		AddScoreFunc(releaseTime30dFuncScoreQuery()).
 		AddScoreFunc(releaseTime90dFuncScoreQuery()).
@@ -116,12 +115,6 @@ func (r searchRequest) matchTitle() *elastic.MatchQuery {
 		Boost(1)
 }
 
-func (r searchRequest) matchPrefixTitle() *elastic.MatchPhrasePrefixQuery {
-	return elastic.NewMatchPhrasePrefixQuery("title", r.escaped()).
-		QueryName("title-match-phrase-prefix").MaxExpansions(10).
-		Boost(10)
-}
-
 func (r searchRequest) matchPhraseTitle() *elastic.MatchPhraseQuery {
 	return elastic.NewMatchPhraseQuery("title", r.escaped()).
 		QueryName("title-match-phrase").
@@ -143,12 +136,6 @@ func (r searchRequest) matchDescription() *elastic.MatchQuery {
 		Boost(1)
 }
 
-func (r searchRequest) matchPrefixDescription() *elastic.MatchPhrasePrefixQuery {
-	return elastic.NewMatchPhrasePrefixQuery("description", r.escaped()).
-		QueryName("description-match-phrase-prefix").
-		Boost(1)
-}
-
 func (r searchRequest) matchPhraseDescription() *elastic.MatchPhraseQuery {
 	return elastic.NewMatchPhraseQuery("description", r.escaped()).
 		QueryName("description-match-phrase").
@@ -162,13 +149,14 @@ func (r searchRequest) matchCompressedChannelName() *elastic.MatchQuery {
 		Boost(15)
 }
 
-func (r searchRequest) matchPrefixName() *elastic.MatchPhrasePrefixQuery {
-	return elastic.NewMatchPhrasePrefixQuery("name", r.escaped()).
-		QueryName("name-match-phrase-prefix").
-		Boost(2)
+func (r searchRequest) matchCompressedChannel() *elastic.MatchQuery {
+	compressed := "@" + strings.Replace(r.S, " ", "", -1)
+	return elastic.NewMatchQuery("name", compressed).
+		QueryName("channel-match-@compressed").
+		Boost(5)
 }
 
-func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
+func (r searchRequest) matchPhraseName() *elastic.MatchPhraseQuery {
 	boost := 3.0
 	if r.S[0] == '@' {
 		boost = boost * 10
@@ -178,7 +166,7 @@ func (r searchRequest) matchPhraseClaimName() *elastic.MatchPhraseQuery {
 		Boost(boost)
 }
 
-func (r searchRequest) matchClaimName() *elastic.MatchQuery {
+func (r searchRequest) matchName() *elastic.MatchQuery {
 	boost := 1.0
 	if r.S[0] == '@' {
 		boost = boost * 10
@@ -190,6 +178,20 @@ func (r searchRequest) matchClaimName() *elastic.MatchQuery {
 	return elastic.NewMatchQuery("name", r.S).
 		QueryName("name-match").
 		Boost(boost)
+
+}
+
+func (r searchRequest) matchChannel() *elastic.MatchQuery {
+	boost := 1.0
+	if r.S[0] == '@' {
+		boost = boost * 2
+		return elastic.NewMatchQuery("channel", r.S).
+			QueryName("channel-match-@boost").
+			Boost(boost)
+	}
+
+	return elastic.NewMatchQuery("channel", r.S).
+		QueryName("name-match")
 
 }
 
