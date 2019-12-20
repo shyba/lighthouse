@@ -9,7 +9,7 @@ import (
 const effectiveFactor = 0.0000000000001
 
 func controllingBoostQuery() *elastic.MatchQuery {
-	return elastic.NewMatchQuery("bid_state", "Controlling").Boost(5000)
+	return elastic.NewMatchQuery("bid_state", "Controlling").Boost(3000)
 }
 
 func claimWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
@@ -35,8 +35,8 @@ func releaseTime7dFuncScoreQuery() *elastic.GaussDecayFunction {
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("7d").
-		Decay(0.50).
-		Weight(0.5)
+		Decay(0.70).
+		Weight(0.2)
 }
 
 func releaseTime30dFuncScoreQuery() *elastic.GaussDecayFunction {
@@ -44,7 +44,7 @@ func releaseTime30dFuncScoreQuery() *elastic.GaussDecayFunction {
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("30d").
-		Decay(0.50).
+		Decay(0.10).
 		Weight(0.2)
 
 }
