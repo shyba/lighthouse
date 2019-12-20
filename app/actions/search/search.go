@@ -73,7 +73,10 @@ func Search(r *http.Request) api.Response {
 	}
 
 	if searchRequest.Debug != nil {
-		searchResults, err := service.Explain(true).Do(context.Background())
+		searchResults, err := service.
+			Explain(true).
+			ErrorTrace(true).
+			Do(context.Background())
 		if err != nil {
 			return api.Response{Error: errors.Err(err)}
 		}

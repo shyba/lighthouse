@@ -13,6 +13,9 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
+var StreamOnlyMatch = elastic.NewMatchQuery("claim_type", "stream")
+var ChannelOnlyMatch = elastic.NewMatchQuery("claim_type", "channel")
+
 func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
 	base := elastic.NewBoolQuery()
 
@@ -22,23 +25,26 @@ func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
 	base.Should(controllingBoostQuery())
 
 	//The minimum things that should match for it to be considered a valid result.
-	//Anything in here will allow it txo be scaled and returned
+	//Anything in here will allow it to be scaled and returned
 	min := elastic.NewBoolQuery()
 	min.Should(r.moreLikeThis())
 	min.Should(r.matchPhraseName())
 	min.Should(r.matchName())
-	min.Should(r.nameContains())
-	min.Should(r.titleContains())
+	//min.Should(r.nameContains())
+	//min.Should(r.titleContains())
+	//min.Should(r.descriptionContains())
 	min.Should(r.matchTitle())
 	min.Should(r.matchPhraseTitle())
-	min.Should(r.descriptionContains())
 	min.Should(r.matchDescription())
 	min.Should(r.matchPhraseDescription())
-	min.Should(r.matchCompressedChannelName())
+	min.Should(r.matchCompressedName())
+	min.Should(r.matchChannel())
+	min.Should(r.matchCompressedChannel())
 	base.Must(min)
 
 	//Any parameters that should filter but not impact scores
 	base.Filter(r.getFilters()...)
+
 	return elastic.NewFunctionScoreQuery().
 		ScoreMode("sum").
 		Query(base).
@@ -86,16 +92,16 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 	mlt := elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
 		Field("name").
 		Field("title").
-		//Field("description").
-		MinTermFreq(2).
-		MaxQueryTerms(10)
+		Field("description").
+		Field("channel").
+		MinWordLength(5).
+		IgnoreLikeText("https")
 	if r.RelatedTo != nil {
 		item := elastic.NewMoreLikeThisQueryItem().
 			Index(index.Claims).
 			Id(util.StrFromPtr(r.RelatedTo))
 		return mlt.LikeItems(item).
-			Field("channel").
-			Boost(1)
+			Boost(2)
 	}
 	return mlt.LikeText(r.S)
 }
@@ -103,8 +109,6 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 func (r searchRequest) titleContains() *elastic.QueryStringQuery {
 	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("title-contains").
-		AnalyzeWildcard(true).
-		AllowLeadingWildcard(true).
 		Field("title").
 		Boost(1)
 }
@@ -125,8 +129,6 @@ func (r searchRequest) descriptionContains() *elastic.QueryStringQuery {
 	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("description-contains").
 		Field("description").
-		AnalyzeWildcard(true).
-		AllowLeadingWildcard(true).
 		Boost(1)
 }
 
@@ -142,18 +144,24 @@ func (r searchRequest) matchPhraseDescription() *elastic.MatchPhraseQuery {
 		Boost(2)
 }
 
-func (r searchRequest) matchCompressedChannelName() *elastic.MatchQuery {
-	compressed := "@" + strings.Replace(r.S, " ", "", -1)
-	return elastic.NewMatchQuery("name", compressed).
+func (r searchRequest) matchCompressedName() *elastic.BoolQuery {
+	compressed := strings.Replace(r.S, " ", "", -1)
+	matchName := elastic.NewMatchQuery("name", compressed).
+		Boost(5)
+	return elastic.NewBoolQuery().
 		QueryName("name-match-@compressed").
-		Boost(15)
+		Must(ChannelOnlyMatch).
+		Must(matchName)
 }
 
-func (r searchRequest) matchCompressedChannel() *elastic.MatchQuery {
-	compressed := "@" + strings.Replace(r.S, " ", "", -1)
-	return elastic.NewMatchQuery("name", compressed).
+func (r searchRequest) matchCompressedChannel() *elastic.BoolQuery {
+	compressed := strings.Replace(r.S, " ", "", -1)
+	matchChannel := elastic.NewMatchQuery("channel", compressed).
+		Boost(3)
+	return elastic.NewBoolQuery().
 		QueryName("channel-match-@compressed").
-		Boost(5)
+		Must(StreamOnlyMatch).
+		Must(matchChannel)
 }
 
 func (r searchRequest) matchPhraseName() *elastic.MatchPhraseQuery {
@@ -166,32 +174,34 @@ func (r searchRequest) matchPhraseName() *elastic.MatchPhraseQuery {
 		Boost(boost)
 }
 
-func (r searchRequest) matchName() *elastic.MatchQuery {
-	boost := 1.0
+func (r searchRequest) matchName() *elastic.BoolQuery {
 	if r.S[0] == '@' {
-		boost = boost * 10
-		return elastic.NewMatchQuery("name", r.S).
+		matchNameBoost := elastic.NewBoolQuery().
+			Should(elastic.NewMatchQuery("name", r.S)).
+			Must(ChannelOnlyMatch).
+			Boost(10)
+		return elastic.NewBoolQuery().
 			QueryName("name-match-@boost").
-			Boost(boost * 10)
+			Should(elastic.NewMatchQuery("name", r.S)).
+			Should(matchNameBoost)
 	}
-
-	return elastic.NewMatchQuery("name", r.S).
-		QueryName("name-match").
-		Boost(boost)
+	return elastic.NewBoolQuery().Should(elastic.NewMatchQuery("name", r.S)).
+		QueryName("name-match")
 
 }
 
-func (r searchRequest) matchChannel() *elastic.MatchQuery {
-	boost := 1.0
+func (r searchRequest) matchChannel() *elastic.BoolQuery {
+	channelMatch := elastic.NewMatchQuery("channel", r.S)
 	if r.S[0] == '@' {
-		boost = boost * 2
-		return elastic.NewMatchQuery("channel", r.S).
+		return elastic.NewBoolQuery().
 			QueryName("channel-match-@boost").
-			Boost(boost)
+			Must(StreamOnlyMatch).
+			Must(channelMatch).Boost(5)
 	}
 
-	return elastic.NewMatchQuery("channel", r.S).
-		QueryName("name-match")
+	return elastic.NewBoolQuery().
+		QueryName("channel-match").
+		Must(channelMatch)
 
 }
 
@@ -269,6 +279,10 @@ func (r searchRequest) getFilters() []elastic.Query {
 		filters = append(filters, claim)
 	}
 
+	if related := r.relatedContentFilter(); related != nil {
+		filters = append(filters, related)
+	}
+
 	if len(filters) > 0 {
 		return append(filters, bidstateFilter)
 
@@ -310,6 +324,13 @@ func (r searchRequest) claimTypeFilter() *elastic.MatchQuery {
 		if t, ok := claimTypeMap[util.StrFromPtr(r.ClaimType)]; ok {
 			return elastic.NewMatchQuery("claim_type", t)
 		}
+	}
+	return nil
+}
+
+func (r searchRequest) relatedContentFilter() *elastic.MatchQuery {
+	if r.RelatedTo != nil {
+		return StreamOnlyMatch
 	}
 	return nil
 }
