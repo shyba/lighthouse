@@ -79,14 +79,14 @@ func releaseTime1yFuncScoreQuery() *elastic.GaussDecayFunction {
 }
 
 func viewCountFuncScoreQuery() *elastic.FunctionScoreQuery {
-	score := elastic.NewFieldValueFactorFunction().Field("view_cnt").
+	score := elastic.NewFieldValueFactorFunction().Field("view_cnt").Missing(0.0).
 		Modifier("log1p")
 
 	return elastic.NewFunctionScoreQuery().AddScoreFunc(score)
 }
 
 func subscriptionCountFuncScoreQuery() *elastic.FunctionScoreQuery {
-	score := elastic.NewFieldValueFactorFunction().Field("sub_cnt").
+	score := elastic.NewFieldValueFactorFunction().Field("sub_cnt").Missing(0.0).
 		Modifier("log1p")
 
 	return elastic.NewFunctionScoreQuery().AddScoreFunc(score)

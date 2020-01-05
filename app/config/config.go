@@ -18,7 +18,7 @@ func InitializeConfiguration() {
 		logrus.Panic(err)
 	}
 	db.InitChainquery(config.ChainQueryDsn)
-	db.InitInternalAPIs(config.InternalAPIDSN)
+	//db.InitInternalAPIs(config.InternalAPIDSN)
 	es.ElasticSearchURL = config.ElasticSearchURL
 	chainquery.SyncStateDir = config.SyncStateDir
 	if viper.GetBool("debugmode") {
