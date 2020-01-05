@@ -62,7 +62,7 @@ func Search(r *http.Request) api.Response {
 	if searchRequest.Source == nil {
 		sourceContext = sourceContext.Include("name", "claimId")
 		if searchRequest.Resolve != nil {
-			sourceContext = sourceContext.Include("channel", "title", "thumbnail_url", "release_time", "fee")
+			sourceContext = sourceContext.Include("channel", "channel_claim_id", "title", "thumbnail_url", "release_time", "fee")
 		}
 	}
 	service := es.Client.
