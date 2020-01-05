@@ -23,6 +23,8 @@ func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
 	base.Should(controllingBoostQuery())
+	base.Should(viewCountFuncScoreQuery())
+	base.Should(subscriptionCountFuncScoreQuery())
 
 	//The minimum things that should match for it to be considered a valid result.
 	//Anything in here will allow it to be scaled and returned
@@ -92,9 +94,8 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 	mlt := elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
 		Field("name").
 		Field("title").
-		Field("description").
 		Field("channel").
-		MinWordLength(5).
+		//MinWordLength(5).
 		IgnoreLikeText("https")
 	if r.RelatedTo != nil {
 		item := elastic.NewMoreLikeThisQueryItem().

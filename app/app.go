@@ -57,6 +57,7 @@ func initElasticSearch() {
 }
 
 func initAPIServer() {
+	api.TraceEnabled = util.Debugging
 	host := viper.GetString("host")
 	port := viper.GetInt("port")
 	logrus.Infof("API Server started @ %s", "http://"+host+":"+viper.GetString("port")+"/search?s=test")

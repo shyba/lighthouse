@@ -1,4 +1,4 @@
-package jobs
+package chainquery
 
 import (
 	"context"
@@ -9,15 +9,14 @@ import (
 
 	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/es"
-	"github.com/lbryio/lighthouse/app/es/index"
+	"github.com/lbryio/lighthouse/app/model"
 
-	"github.com/lbryio/lbry.go/extras/util"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/null"
+	"github.com/lbryio/lbry.go/v2/extras/util"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/olivere/elastic.v6"
 )
 
 var claimSyncRunning bool
@@ -52,7 +51,9 @@ SELECT c.id,
     c.frame_width,
     c.frame_height,
     c.duration,
-    c.is_nsfw
+    c.is_nsfw,
+	c.thumbnail_url,
+	c.fee
 FROM claim c LEFT JOIN claim p on p.claim_id = c.publisher_id 
 WHERE c.id > ? ` + channelFilter + `
 AND c.modified_at >= ? 
@@ -61,8 +62,8 @@ LIMIT ?`
 	return query
 }
 
-// SyncClaims uses Chainquery to sync the claim information to the elasticsearch db.
-func SyncClaims(channelID *string) {
+// Sync uses Chainquery to sync the claim information to the elasticsearch db.
+func Sync(channelID *string) {
 	if claimSyncRunning {
 		return
 	}
@@ -77,7 +78,7 @@ func SyncClaims(channelID *string) {
 	if syncState.StartSyncTime.IsZero() || syncState.LastID == 0 {
 		syncState.StartSyncTime = time.Now()
 	}
-	p, err := es.Client.BulkProcessor().Name("ClaimSync").After(afterBulkSend).Workers(4).Do(context.Background())
+	p, err := es.Client.BulkProcessor().Name("ClaimSync").After(es.AfterBulkSend).Workers(4).Do(context.Background())
 	if err != nil {
 		logrus.Error(errors.Err(err))
 		return
@@ -87,35 +88,37 @@ func SyncClaims(channelID *string) {
 	for !finished {
 		rows, err := db.Chainquery.Query(query(channelID), syncState.LastID, syncState.LastSyncTime, batchSize)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Error(errors.Prefix("Chainquery Err:", err))
 			return
 		}
-		claims := make([]claimInfo, 0, batchSize)
+		claims := make([]model.Claim, 0, batchSize)
 		for rows.Next() {
-			claim := claimInfo{}
+			claim := model.NewClaim()
 			err := rows.Scan(
 				&claim.ID,
 				&claim.Name,
-				&claim.Channel,
-				&claim.ChannelClaimID,
+				claim.Channel,
+				claim.ChannelClaimID,
 				&claim.BidState,
 				&claim.EffectiveAmount,
 				&claim.TransactionTimeUnix,
 				&claim.ChannelEffectiveAmount,
 				&claim.ClaimID,
 				&claim.JSONValue,
-				&claim.Title,
-				&claim.Description,
+				claim.Title,
+				claim.Description,
 				&claim.ReleaseTimeUnix,
-				&claim.ContentType,
+				claim.ContentType,
 				&claim.CertValid,
-				&claim.ClaimType,
-				&claim.FrameWidth,
-				&claim.FrameHeight,
-				&claim.Duration,
-				&claim.NSFW)
+				claim.ClaimType,
+				claim.FrameWidth,
+				claim.FrameHeight,
+				claim.Duration,
+				&claim.NSFW,
+				claim.ThumbnailURL,
+				claim.Fee)
 			if err != nil {
-				logrus.Error(err)
+				logrus.Error(errors.Prefix("Scan Err:", err))
 			}
 			value := map[string]interface{}{}
 			err = json.Unmarshal([]byte(claim.JSONValue.String), &value)
@@ -132,15 +135,17 @@ func SyncClaims(channelID *string) {
 				logrus.Error("Failed to process claim ", claim.ClaimID, " due to missing value")
 				continue
 			}
-			claim.TransactionTime = time.Unix(int64(claim.TransactionTimeUnix.Uint64), 0)
-			claim.ReleaseTime = time.Unix(int64(claim.ReleaseTimeUnix.Uint64), 0)
+			txTime := null.NewTime(time.Unix(int64(claim.TransactionTimeUnix.Uint64), 0), true)
+			claim.TransactionTime = &txTime
+			releaseTime := null.NewTime(time.Unix(int64(claim.ReleaseTimeUnix.Uint64), 0), true)
+			claim.ReleaseTime = &releaseTime
 			if claim.ReleaseTimeUnix.IsNull() {
 				claim.ReleaseTime = claim.TransactionTime
 			}
 			if claim.BidState == "Spent" || claim.BidState == "Expired" {
-				claim.delete(p)
+				claim.Delete(p)
 			} else {
-				claim.add(p)
+				claim.Add(p)
 			}
 
 		}
@@ -149,7 +154,7 @@ func SyncClaims(channelID *string) {
 		iteration++
 	}
 
-	// If not finished, store last id to run again later where we left off, otherwise update last sync time.
+	// If not finished, store last id to run again later where we left off, otherwise Update last sync time.
 	if iteration*batchSize+batchSize >= maxClaimsToProcessPerIteration {
 	} else {
 		syncState.LastID = 0
@@ -170,56 +175,12 @@ func SyncClaims(channelID *string) {
 	}
 }
 
-func afterBulkSend(executionID int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
-	if response.Errors {
-		for _, failure := range response.Failed() {
-			logrus.Error(failure.Error)
-		}
-	}
-}
-
 func endClaimSync(channelID *string) {
 	claimSyncRunning = false
 	syncState, _ := loadSynState()
 	if syncState != nil && syncState.LastID != 0 {
-		go SyncClaims(channelID)
+		go Sync(channelID)
 	}
-}
-
-type claimInfo struct {
-	ID                     uint64                 `json:"id"`
-	Name                   string                 `json:"name"`
-	ClaimID                string                 `json:"claimId"`
-	Channel                null.String            `json:"channel,omitempty"`
-	ChannelClaimID         null.String            `json:"channel_claim_id,omitempty"`
-	BidState               string                 `json:"bid_state"`
-	EffectiveAmount        uint64                 `json:"effective_amount"`
-	TransactionTimeUnix    null.Uint64            `json:"-"` //Could be null in mempool
-	TransactionTime        time.Time              `json:"transaction_time"`
-	ChannelEffectiveAmount uint64                 `json:"certificate_amount"`
-	JSONValue              null.String            `json:"-"`
-	Value                  map[string]interface{} `json:"value"`
-	Title                  null.String            `json:"title,omitempty"`
-	Description            null.String            `json:"description,omitempty"`
-	ReleaseTimeUnix        null.Uint64            `json:"-"`
-	ReleaseTime            time.Time              `json:"release_time"`
-	ContentType            null.String            `json:"content_type,omitempty"`
-	CertValid              bool                   `json:"cert_valid"`
-	ClaimType              null.String            `json:"claim_type,omitempty"`
-	FrameWidth             null.Int               `json:"frame_width,omitempty"`
-	FrameHeight            null.Int               `json:"frame_height,omitempty"`
-	Duration               null.Int               `json:"duration,omitempty"`
-	NSFW                   bool                   `json:"nsfw"`
-}
-
-func (c claimInfo) add(p *elastic.BulkProcessor) {
-	r := elastic.NewBulkIndexRequest().Index(index.Claims).Type(index.ClaimType).Id(c.ClaimID).Doc(c)
-	p.Add(r)
-}
-
-func (c claimInfo) delete(p *elastic.BulkProcessor) {
-	r := elastic.NewBulkDeleteRequest().Index(index.Claims).Type(index.ClaimType).Id(c.ClaimID)
-	p.Add(r)
 }
 
 type claimSyncState struct {
@@ -238,16 +199,6 @@ func (c claimSyncState) Save() error {
 		return errors.Err(err)
 	}
 	return nil
-}
-
-func (c claimInfo) AsJSON() string {
-	data, err := json.Marshal(&c)
-	if err != nil {
-		logrus.Error(errors.Err(err))
-		return ""
-	}
-	return string(data)
-
 }
 
 func loadSynState() (*claimSyncState, error) {
