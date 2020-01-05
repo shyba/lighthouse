@@ -40,6 +40,8 @@ type Claim struct {
 	NSFW                   bool                   `json:"nsfw,omitempty"`
 	ViewCnt                *null.Uint64           `json:"view_cnt,omitempty"`
 	SubCnt                 *null.Uint64           `json:"sub_cnt,omitempty"`
+	ThumbnailURL           *null.String           `json:"thumbnail_url,omitempty"`
+	Fee                    *null.Float64          `json:"fee,omitempty"`
 }
 
 func NewClaim() Claim {
@@ -57,6 +59,8 @@ func NewClaim() Claim {
 		Duration:        util.PtrToNullUint64(0),
 		ViewCnt:         util.PtrToNullUint64(0),
 		SubCnt:          util.PtrToNullUint64(0),
+		ThumbnailURL:    util.PtrToNullString(""),
+		Fee:             util.PtrToNullFloat64(0),
 	}
 }
 

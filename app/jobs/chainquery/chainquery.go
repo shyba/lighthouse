@@ -51,7 +51,9 @@ SELECT c.id,
     c.frame_width,
     c.frame_height,
     c.duration,
-    c.is_nsfw
+    c.is_nsfw,
+	c.thumbnail_url,
+	c.fee
 FROM claim c LEFT JOIN claim p on p.claim_id = c.publisher_id 
 WHERE c.id > ? ` + channelFilter + `
 AND c.modified_at >= ? 
@@ -112,7 +114,9 @@ func Sync(channelID *string) {
 				claim.FrameWidth,
 				claim.FrameHeight,
 				claim.Duration,
-				&claim.NSFW)
+				&claim.NSFW,
+				claim.ThumbnailURL,
+				claim.Fee)
 			if err != nil {
 				logrus.Error(errors.Prefix("Scan Err:", err))
 			}

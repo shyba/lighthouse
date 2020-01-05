@@ -28,6 +28,7 @@ type searchRequest struct {
 	MediaType   *string `json:"mediaType"`
 	ClaimType   *string `json:"claimType"`
 	NSFW        *bool
+	Resolve     *bool
 	//Debug params
 	ClaimID *string
 	Score   *bool
@@ -60,6 +61,9 @@ func Search(r *http.Request) api.Response {
 	sourceContext := elastic.NewFetchSourceContext(true).Exclude("value")
 	if searchRequest.Source == nil {
 		sourceContext = sourceContext.Include("name", "claimId")
+		if searchRequest.Resolve != nil {
+			sourceContext = sourceContext.Include("channel", "title", "thumbnail_url", "release_time", "fee")
+		}
 	}
 	service := es.Client.
 		Search("claims").

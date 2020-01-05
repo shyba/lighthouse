@@ -10,7 +10,7 @@ require (
 	github.com/jasonlvhit/gocron v0.0.0-20191125235832-30e323a962ed
 	github.com/jmoiron/sqlx v0.0.0-20170430194603-d9bd385d68c0
 	github.com/lbryio/lbry.go v1.1.2
-	github.com/lbryio/lbry.go/v2 v2.4.5
+	github.com/lbryio/lbry.go/v2 v2.4.6
 	github.com/lbryio/ozzo-validation v0.0.0-20170323141101-d1008ad1fd04
 	github.com/lib/pq v1.1.1 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect

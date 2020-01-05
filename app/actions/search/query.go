@@ -94,9 +94,8 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 	mlt := elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
 		Field("name").
 		Field("title").
-		Field("description").
 		Field("channel").
-		MinWordLength(5).
+		//MinWordLength(5).
 		IgnoreLikeText("https")
 	if r.RelatedTo != nil {
 		item := elastic.NewMoreLikeThisQueryItem().
