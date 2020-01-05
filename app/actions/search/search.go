@@ -27,13 +27,13 @@ type searchRequest struct {
 	ContentType *string `json:"contentType"`
 	MediaType   *string `json:"mediaType"`
 	ClaimType   *string `json:"claimType"`
-	NSFW        *bool
-	Resolve     *bool
+	NSFW        bool
+	Resolve     bool
 	//Debug params
 	ClaimID *string
-	Score   *bool
-	Source  *bool
-	Debug   *bool
+	Score   bool
+	Source  bool
+	Debug   bool
 }
 
 // Search API returns the name and claim id of the results based on the query passed.
@@ -59,9 +59,9 @@ func Search(r *http.Request) api.Response {
 		return api.Response{Error: errors.Err("%s: for query -s %s", err, t)}
 	}
 	sourceContext := elastic.NewFetchSourceContext(true).Exclude("value")
-	if searchRequest.Source == nil {
+	if !searchRequest.Source {
 		sourceContext = sourceContext.Include("name", "claimId")
-		if searchRequest.Resolve != nil {
+		if searchRequest.Resolve {
 			sourceContext = sourceContext.Include("channel", "channel_claim_id", "title", "thumbnail_url", "release_time", "fee")
 		}
 	}
@@ -76,7 +76,7 @@ func Search(r *http.Request) api.Response {
 		service = service.From(*searchRequest.From)
 	}
 
-	if searchRequest.Debug != nil {
+	if searchRequest.Debug {
 		searchResults, err := service.
 			Explain(true).
 			ErrorTrace(true).

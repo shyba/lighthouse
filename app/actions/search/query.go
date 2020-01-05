@@ -349,7 +349,7 @@ func (r searchRequest) contentTypeFilter() *elastic.TermsQuery {
 }
 
 func (r searchRequest) nsfwFilter() *elastic.MatchQuery {
-	if r.NSFW != nil {
+	if r.NSFW {
 		return elastic.NewMatchQuery("nsfw", r.NSFW)
 	}
 	return nil
