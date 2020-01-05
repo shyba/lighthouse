@@ -4,12 +4,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/lbryio/lighthouse/app/jobs/chainquery"
+
 	"github.com/lbryio/lighthouse/app/test"
 
 	"github.com/lbryio/lighthouse/app"
 	"github.com/lbryio/lighthouse/app/actions"
 	"github.com/lbryio/lighthouse/app/config"
-	"github.com/lbryio/lighthouse/app/jobs"
 	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,7 +42,7 @@ var testCmd = &cobra.Command{
 			panic(err)
 		}
 		for _, c := range channels {
-			jobs.SyncClaims(&c)
+			chainquery.Sync(&c)
 		}
 
 		go app.DoYourThing()

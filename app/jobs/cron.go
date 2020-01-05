@@ -1,6 +1,9 @@
 package jobs
 
 import (
+	"github.com/lbryio/lighthouse/app/jobs/chainquery"
+	"github.com/lbryio/lighthouse/app/jobs/internalapis"
+
 	"github.com/jasonlvhit/gocron"
 	"github.com/sirupsen/logrus"
 )
@@ -12,7 +15,8 @@ var scheduler *gocron.Scheduler
 func Start() {
 	scheduler = gocron.NewScheduler()
 	var channels *string
-	scheduler.Every(1).Minutes().Do(SyncClaims, channels)
+	scheduler.Every(15).Minutes().Do(chainquery.Sync, channels)
+	scheduler.Every(6).Hours().Do(internalapis.Sync)
 
 	cronRunning = scheduler.Start()
 }

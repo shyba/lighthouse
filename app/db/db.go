@@ -10,14 +10,30 @@ import (
 // Chainquery is the sql connection to the chainquery database.
 var Chainquery *sqlx.DB
 
-// Init inits the database connection to Chainquery on startup.
-func Init(dsn string) {
+// InternalAPIs is the sql connection to the internal-apis database.
+var InternalAPIs *sqlx.DB
+
+// InitChainquery inits the database connection to Chainquery on startup.
+func InitChainquery(dsn string) {
 	var err error
+
 	Chainquery, err = dbInitConnection(dsn, "mysql")
 	if err != nil {
 		logrus.Panic(err)
 	} else if Chainquery == nil {
 		logrus.Panic("Chainquery connection could not be created")
+	}
+}
+
+// InitInternalAPIs inits the database connection to Chainquery on startup.
+func InitInternalAPIs(dsn string) {
+	var err error
+
+	InternalAPIs, err = dbInitConnection(dsn, "mysql")
+	if err != nil {
+		logrus.Panic(err)
+	} else if InternalAPIs == nil {
+		logrus.Panic("InternalAPIs connection could not be created")
 	}
 }
 

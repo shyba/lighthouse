@@ -11,6 +11,7 @@ type Config struct {
 	ChainQueryDsn    string `env:"CHAINQUERY_DSN"`
 	SyncStateDir     string `env:"SYNCSTATEDIR"`
 	ElasticSearchURL string `env:"ELASTICSEARCHURL"`
+	InternalAPIDSN   string `env:"INTERNALAPIS_DSN"`
 }
 
 // NewWithEnvVars creates an Config from environment variables
