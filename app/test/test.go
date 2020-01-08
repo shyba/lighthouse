@@ -14,6 +14,7 @@ type searchResult struct {
 	ClaimID string `json:"claimId"`
 }
 
+// RunTests runs through some e2e tests for lighthouse
 func RunTests() {
 	results := make([]searchResult, 0)
 

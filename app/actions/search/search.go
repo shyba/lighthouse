@@ -52,8 +52,8 @@ func Search(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: errors.Err(err), Status: http.StatusBadRequest}
 	}
-	searchRequest.S = CheckForSpecialHandling(searchRequest.S)
-	query := searchRequest.NewQuery()
+	searchRequest.S = checkForSpecialHandling(searchRequest.S)
+	query := searchRequest.newQuery()
 	t, err := query.Source()
 	if err != nil {
 		return api.Response{Error: errors.Err("%s: for query -s %s", err, t)}

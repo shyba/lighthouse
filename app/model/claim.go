@@ -14,6 +14,7 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
+// Claim is the document type specified as a struct stored in elasticsearch
 type Claim struct {
 	ID                     uint64                 `json:"id,omitempty"`
 	Name                   string                 `json:"name,omitempty"`
@@ -44,6 +45,7 @@ type Claim struct {
 	Fee                    *null.Float64          `json:"fee,omitempty"`
 }
 
+// NewClaim creates an instance of Claim with default values for pointers.
 func NewClaim() Claim {
 	return Claim{
 		Channel:         util.PtrToNullString(""),
@@ -64,21 +66,25 @@ func NewClaim() Claim {
 	}
 }
 
+// Add Inserts the claim as a document via the bulk processor into elasticsearch
 func (c Claim) Add(p *elastic.BulkProcessor) {
 	r := elastic.NewBulkIndexRequest().Index(index.Claims).Type(index.ClaimType).Id(c.ClaimID).Doc(c)
 	p.Add(r)
 }
 
+// Delete removes the claim via the bulk processor from elasticsearch
 func (c Claim) Delete(p *elastic.BulkProcessor) {
 	r := elastic.NewBulkDeleteRequest().Index(index.Claims).Type(index.ClaimType).Id(c.ClaimID)
 	p.Add(r)
 }
 
+// Update updates just the fields modified or with default values via the bulk processor in elasticsearch
 func (c Claim) Update(p *elastic.BulkProcessor) {
 	r := elastic.NewBulkUpdateRequest().Index(index.Claims).Type(index.ClaimType).Id(c.ClaimID).Doc(c)
 	p.Add(r)
 }
 
+// AsJSON converts the object into a json string
 func (c Claim) AsJSON() string {
 	data, err := json.Marshal(&c)
 	if err != nil {

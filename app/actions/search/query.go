@@ -13,10 +13,12 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
-var StreamOnlyMatch = elastic.NewMatchQuery("claim_type", "stream")
+var streamOnlyMatch = elastic.NewMatchQuery("claim_type", "stream")
+
+// ChannelOnlyMatch is a default query that matches only channels.
 var ChannelOnlyMatch = elastic.NewMatchQuery("claim_type", "channel")
 
-func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
+func (r searchRequest) newQuery() *elastic.FunctionScoreQuery {
 	base := elastic.NewBoolQuery()
 
 	//Things that should bee scaled once a match is found
@@ -162,7 +164,7 @@ func (r searchRequest) matchCompressedChannel() *elastic.BoolQuery {
 		Boost(3)
 	return elastic.NewBoolQuery().
 		QueryName("channel-match-@compressed").
-		Must(StreamOnlyMatch).
+		Must(streamOnlyMatch).
 		Must(matchChannel)
 }
 
@@ -197,7 +199,7 @@ func (r searchRequest) matchChannel() *elastic.BoolQuery {
 	if r.S[0] == '@' {
 		return elastic.NewBoolQuery().
 			QueryName("channel-match-@boost").
-			Must(StreamOnlyMatch).
+			Must(streamOnlyMatch).
 			Must(channelMatch).Boost(5)
 	}
 
@@ -332,7 +334,7 @@ func (r searchRequest) claimTypeFilter() *elastic.MatchQuery {
 
 func (r searchRequest) relatedContentFilter() *elastic.MatchQuery {
 	if r.RelatedTo != nil {
-		return StreamOnlyMatch
+		return streamOnlyMatch
 	}
 	return nil
 }

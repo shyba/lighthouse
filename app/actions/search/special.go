@@ -6,7 +6,7 @@ var tayloredResults = map[string]string{
 	"porn": "porn sex anal oral creampie",
 }
 
-func CheckForSpecialHandling(s string) string {
+func checkForSpecialHandling(s string) string {
 	sLower := strings.ToLower(s)
 	if newSearch, ok := tayloredResults[sLower]; ok {
 		return newSearch

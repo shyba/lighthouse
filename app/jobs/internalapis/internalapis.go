@@ -24,6 +24,7 @@ var incSyncRunning bool
 
 const batchSize = 1000
 
+// Sync synchronizes view and subscription counts from internal-apis
 func Sync() {
 	if incSyncRunning || db.InternalAPIs == nil {
 		return
@@ -107,12 +108,12 @@ func syncViewCounts() {
 			continue
 		}
 		scroll.ScrollId(result.ScrollId)
-		claimIds := make([]string, len(result.Hits.Hits))
+		claimIDs := make([]string, len(result.Hits.Hits))
 		for i, h := range result.Hits.Hits {
-			claimIds[i] = h.Id
+			claimIDs[i] = h.Id
 		}
 
-		err = updateViewCounts(claimIds, iteration, p)
+		err = updateViewCounts(claimIDs, iteration, p)
 		if err != nil {
 			logrus.Error(err)
 		}
@@ -141,13 +142,13 @@ func endIncSync() {
 	incSyncRunning = false
 }
 
-func updateViewCounts(claimIds []string, iteration int, p *elastic.BulkProcessor) error {
-	if len(claimIds) == 0 {
+func updateViewCounts(claimIDs []string, iteration int, p *elastic.BulkProcessor) error {
+	if len(claimIDs) == 0 {
 		logrus.Warningf("there are no claimids to update!")
 		return nil
 	}
-	iSet := make([]interface{}, len(claimIds))
-	for i, c := range claimIds {
+	iSet := make([]interface{}, len(claimIDs))
+	for i, c := range claimIDs {
 		iSet[i] = c
 	}
 	q := fmt.Sprintf(`
@@ -155,7 +156,7 @@ func updateViewCounts(claimIds []string, iteration int, p *elastic.BulkProcessor
 			FROM file 
 			INNER JOIN file_view ON file_view.file_id = file.id 
 			WHERE file.claim_id IN (%s) 
-			GROUP BY file.claim_id`, query.Qs(len(claimIds)))
+			GROUP BY file.claim_id`, query.Qs(len(claimIDs)))
 
 	rows, err := db.InternalAPIs.Query(q, iSet...)
 	if err != nil {
@@ -176,31 +177,31 @@ func updateViewCounts(claimIds []string, iteration int, p *elastic.BulkProcessor
 		}
 		vCntMap[r.ClaimID] = r.ViewCnt
 	}
-	for claimId, viewCount := range vCntMap {
+	for claimID, viewCount := range vCntMap {
 		if viewCount > 0 {
-			logrus.Debugf("Found %d views for %s", viewCount, claimId)
+			logrus.Debugf("Found %d views for %s", viewCount, claimID)
 			count := null.Uint64From(uint64(viewCount))
-			c := model.Claim{ClaimID: claimId, ViewCnt: &count}
+			c := model.Claim{ClaimID: claimID, ViewCnt: &count}
 			c.Update(p)
 		}
 	}
 	return nil
 }
 
-func updateSubCounts(claimIds []string, iteration int, p *elastic.BulkProcessor) error {
-	if len(claimIds) == 0 {
+func updateSubCounts(claimIDs []string, iteration int, p *elastic.BulkProcessor) error {
+	if len(claimIDs) == 0 {
 		logrus.Warningf("there are no claimids to update!")
 		return nil
 	}
-	iSet := make([]interface{}, len(claimIds))
-	for i, c := range claimIds {
+	iSet := make([]interface{}, len(claimIDs))
+	for i, c := range claimIDs {
 		iSet[i] = c
 	}
 	q := fmt.Sprintf(`
 			SELECT claim_id, COUNT(*) 
 			FROM subscription 
 			WHERE claim_id IN (%s) 
-			GROUP BY claim_id`, query.Qs(len(claimIds)))
+			GROUP BY claim_id`, query.Qs(len(claimIDs)))
 
 	rows, err := db.InternalAPIs.Query(q, iSet...)
 	if err != nil {
@@ -221,11 +222,11 @@ func updateSubCounts(claimIds []string, iteration int, p *elastic.BulkProcessor)
 		}
 		subCntMap[r.ClaimID] = r.SubCnt
 	}
-	for claimId, subCount := range subCntMap {
+	for claimID, subCount := range subCntMap {
 		if subCount > 0 {
-			logrus.Debugf("Found %d subscriptions for %s", subCount, claimId)
+			logrus.Debugf("Found %d subscriptions for %s", subCount, claimID)
 			count := null.Uint64From(uint64(subCount))
-			c := model.Claim{ClaimID: claimId, SubCnt: &count}
+			c := model.Claim{ClaimID: claimID, SubCnt: &count}
 			c.Update(p)
 		}
 	}
