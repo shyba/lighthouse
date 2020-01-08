@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -64,6 +65,57 @@ func NewClaim() Claim {
 		ThumbnailURL:    util.PtrToNullString(""),
 		Fee:             util.PtrToNullFloat64(0),
 	}
+}
+
+func GetClaimsFromDBRows(rows *sql.Rows) ([]Claim, int, error) {
+	claims := make([]Claim, 0)
+	var lastID int
+	for rows.Next() {
+		claim := NewClaim()
+		err := claim.PopulateFromDB(rows)
+		value := map[string]interface{}{}
+		err = json.Unmarshal([]byte(claim.JSONValue.String), &value)
+		if err != nil {
+			return nil, 0, errors.Prefix("could not parse json for value: ", err)
+		}
+		claim.Value = value
+		lastID = int(claim.ID)
+		claims = append(claims, claim)
+	}
+	return claims, lastID, nil
+}
+
+func (c *Claim) PopulateFromDB(rows *sql.Rows) error {
+	if rows == nil {
+		return errors.Err("DB rows do not exist")
+	}
+	err := rows.Scan(
+		&c.ID,
+		&c.Name,
+		c.Channel,
+		c.ChannelClaimID,
+		&c.BidState,
+		&c.EffectiveAmount,
+		&c.TransactionTimeUnix,
+		&c.ChannelEffectiveAmount,
+		&c.ClaimID,
+		&c.JSONValue,
+		c.Title,
+		c.Description,
+		&c.ReleaseTimeUnix,
+		c.ContentType,
+		&c.CertValid,
+		c.ClaimType,
+		c.FrameWidth,
+		c.FrameHeight,
+		c.Duration,
+		&c.NSFW,
+		c.ThumbnailURL,
+		c.Fee)
+	if err != nil {
+		err = errors.Prefix("Scan Err:", err)
+	}
+	return err
 }
 
 // Add Inserts the claim as a document via the bulk processor into elasticsearch

@@ -91,44 +91,8 @@ func Sync(channelID *string) {
 			logrus.Error(errors.Prefix("Chainquery Err:", err))
 			return
 		}
-		claims := make([]model.Claim, 0, batchSize)
-		for rows.Next() {
-			claim := model.NewClaim()
-			err := rows.Scan(
-				&claim.ID,
-				&claim.Name,
-				claim.Channel,
-				claim.ChannelClaimID,
-				&claim.BidState,
-				&claim.EffectiveAmount,
-				&claim.TransactionTimeUnix,
-				&claim.ChannelEffectiveAmount,
-				&claim.ClaimID,
-				&claim.JSONValue,
-				claim.Title,
-				claim.Description,
-				&claim.ReleaseTimeUnix,
-				claim.ContentType,
-				&claim.CertValid,
-				claim.ClaimType,
-				claim.FrameWidth,
-				claim.FrameHeight,
-				claim.Duration,
-				&claim.NSFW,
-				claim.ThumbnailURL,
-				claim.Fee)
-			if err != nil {
-				logrus.Error(errors.Prefix("Scan Err:", err))
-			}
-			value := map[string]interface{}{}
-			err = json.Unmarshal([]byte(claim.JSONValue.String), &value)
-			if err != nil {
-				logrus.Error(errors.Prefix("could not parse json for value: ", err))
-			}
-			claim.Value = value
-			syncState.LastID = int(claim.ID)
-			claims = append(claims, claim)
-		}
+		var claims []model.Claim
+		claims, syncState.LastID, err = model.GetClaimsFromDBRows(rows)
 		for _, claim := range claims {
 			if claim.JSONValue.IsNull() {
 				logrus.Debug("Claim: ", claim.AsJSON())
