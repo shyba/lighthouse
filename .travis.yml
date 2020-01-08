@@ -26,7 +26,7 @@ script:
   - ./scripts/build.sh
   - go test ./...
   - ./scripts/lint.sh
-  - ./bin/lighthouse test fb364ef587872515f545a5b4b3182b58073f230f &
+  - ./bin/lighthouse serve &
   - sleep 10s
   - "curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' http://localhost:50005/"
   - go mod tidy

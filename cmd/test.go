@@ -46,7 +46,7 @@ var testCmd = &cobra.Command{
 		}
 
 		go app.DoYourThing()
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 		test.RunTests()
 		os.Exit(0)
 	},
