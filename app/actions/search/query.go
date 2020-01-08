@@ -23,6 +23,7 @@ func (r searchRequest) NewQuery() *elastic.FunctionScoreQuery {
 	base.Should(claimWeightFuncScoreQuery())
 	base.Should(channelWeightFuncScoreQuery())
 	base.Should(controllingBoostQuery())
+	base.Should(thumbnailBoostQuery())
 	base.Should(viewCountFuncScoreQuery())
 	base.Should(subscriptionCountFuncScoreQuery())
 

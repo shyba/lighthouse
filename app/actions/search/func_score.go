@@ -10,6 +10,16 @@ const effectiveFactor = 0.0000000000001
 
 func controllingBoostQuery() *elastic.ConstantScoreQuery {
 	return elastic.NewConstantScoreQuery(elastic.NewMatchQuery("bid_state", "Controlling")).Boost(50)
+}
+
+func thumbnailBoostQuery() *elastic.ConstantScoreQuery {
+	emptyThumbnail := elastic.NewMatchQuery("thumbnail_url", "")
+	thumbnailExists := elastic.NewExistsQuery("thumbnail_url")
+	notEmptyThumbnail := elastic.NewBoolQuery().
+		MustNot(emptyThumbnail).
+		Must(thumbnailExists).
+		QueryName("not-empty-thumbnail")
+	return elastic.NewConstantScoreQuery(notEmptyThumbnail).Boost(50)
 
 }
 
