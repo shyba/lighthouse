@@ -67,6 +67,7 @@ func NewClaim() Claim {
 	}
 }
 
+// GetClaimsFromDBRows returns the claims from Chainquery DB.
 func GetClaimsFromDBRows(rows *sql.Rows) ([]Claim, int, error) {
 	claims := make([]Claim, 0)
 	var lastID int
@@ -85,6 +86,7 @@ func GetClaimsFromDBRows(rows *sql.Rows) ([]Claim, int, error) {
 	return claims, lastID, nil
 }
 
+// PopulateFromDB populates the data from the rows into claim objects
 func (c *Claim) PopulateFromDB(rows *sql.Rows) error {
 	if rows == nil {
 		return errors.Err("DB rows do not exist")
