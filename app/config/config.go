@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/johntdyer/slackrus"
 	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/env"
 	"github.com/lbryio/lighthouse/app/es"
@@ -17,6 +18,7 @@ func InitializeConfiguration() {
 	if err != nil {
 		logrus.Panic(err)
 	}
+	InitSlack(config)
 	db.InitChainquery(config.ChainQueryDsn)
 	//db.InitInternalAPIs(config.InternalAPIDSN)
 	es.ElasticSearchURL = config.ElasticSearchURL
@@ -30,4 +32,19 @@ func InitializeConfiguration() {
 		logrus.SetLevel(logrus.TraceLevel)
 	}
 
+}
+
+// InitSlack initializes the slack connection and posts info level or greater to the set channel.
+func InitSlack(config *env.Config) {
+	slackURL := config.SlackHookURL
+	slackChannel := config.SlackChannel
+	if slackURL != "" && slackChannel != "" {
+		logrus.AddHook(&slackrus.SlackrusHook{
+			HookURL:        slackURL,
+			AcceptedLevels: slackrus.LevelThreshold(logrus.InfoLevel),
+			Channel:        slackChannel,
+			IconEmoji:      ":lighthouse:",
+			Username:       "Lighthouse",
+		})
+	}
 }

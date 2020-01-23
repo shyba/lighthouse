@@ -9,6 +9,8 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/jasonlvhit/gocron v0.0.0-20191125235832-30e323a962ed
 	github.com/jmoiron/sqlx v0.0.0-20170430194603-d9bd385d68c0
+	github.com/johntdyer/slack-go v0.0.0-20180213144715-95fac1160b22 // indirect
+	github.com/johntdyer/slackrus v0.0.0-20180518184837-f7aae3243a07
 	github.com/lbryio/lbry.go v1.1.2
 	github.com/lbryio/lbry.go/v2 v2.4.6
 	github.com/lbryio/ozzo-validation v0.0.0-20170323141101-d1008ad1fd04

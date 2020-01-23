@@ -12,6 +12,8 @@ type Config struct {
 	SyncStateDir     string `env:"SYNCSTATEDIR"`
 	ElasticSearchURL string `env:"ELASTICSEARCHURL"`
 	InternalAPIDSN   string `env:"INTERNALAPIS_DSN"`
+	SlackHookURL     string `env:"SLACKHOOKURL"`
+	SlackChannel     string `env:"SLACKCHANNEL"`
 }
 
 // NewWithEnvVars creates an Config from environment variables
