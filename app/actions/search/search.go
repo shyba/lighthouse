@@ -27,7 +27,7 @@ type searchRequest struct {
 	ContentType *string `json:"contentType"`
 	MediaType   *string `json:"mediaType"`
 	ClaimType   *string `json:"claimType"`
-	NSFW        bool
+	NSFW        *bool
 	Resolve     bool
 	//Debug params
 	ClaimID *string

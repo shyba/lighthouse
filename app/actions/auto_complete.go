@@ -20,7 +20,7 @@ type autoCompleteRequest struct {
 	S    string
 	Size *int
 	From *int
-	NSFW bool
+	NSFW *bool
 	//Debug params
 	Source *bool
 	Debug  *bool
@@ -51,8 +51,8 @@ func AutoComplete(r *http.Request) api.Response {
 		Type("phrase_prefix").Slop(5).MaxExpansions(50).
 		Field("name^4")
 	query := elastic.NewBoolQuery().Should(nested, mmName)
-	if acRequest.NSFW {
-		query = query.Must(elastic.NewMatchQuery("nsfw", acRequest.NSFW))
+	if acRequest.NSFW != nil {
+		query = query.Must(elastic.NewMatchQuery("nsfw", *acRequest.NSFW))
 	}
 
 	t, err := query.Source()
