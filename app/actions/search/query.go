@@ -353,10 +353,12 @@ func (r searchRequest) contentTypeFilter() *elastic.TermsQuery {
 
 func (r searchRequest) nsfwFilter() elastic.Query {
 	if r.NSFW != nil {
+		termsQuery := elastic.NewTermsQuery("tags", "nsfw", "porn", "mature", "xxx")
+		nsfwMatch := elastic.NewMatchQuery("nsfw", true)
 		if !*r.NSFW {
-			return elastic.NewBoolQuery().MustNot(elastic.NewMatchQuery("nsfw", true))
+			return elastic.NewBoolQuery().MustNot(termsQuery, nsfwMatch)
 		}
-		return elastic.NewMatchQuery("nsfw", *r.NSFW)
+		return elastic.NewBoolQuery().Should(termsQuery, nsfwMatch).MinimumShouldMatch("1")
 	}
 	return nil
 }

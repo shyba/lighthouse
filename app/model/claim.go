@@ -44,6 +44,8 @@ type Claim struct {
 	SubCnt                 *null.Uint64           `json:"sub_cnt,omitempty"`
 	ThumbnailURL           *null.String           `json:"thumbnail_url,omitempty"`
 	Fee                    *null.Float64          `json:"fee,omitempty"`
+	TagsStr                *null.String           `json:"-"`
+	Tags                   []string               `json:"tags,omitempty"`
 }
 
 // NewClaim creates an instance of Claim with default values for pointers.
@@ -64,6 +66,7 @@ func NewClaim() Claim {
 		SubCnt:          util.PtrToNullUint64(0),
 		ThumbnailURL:    util.PtrToNullString(""),
 		Fee:             util.PtrToNullFloat64(0),
+		TagsStr:         util.PtrToNullString(""),
 	}
 }
 
@@ -75,9 +78,11 @@ func GetClaimsFromDBRows(rows *sql.Rows) ([]Claim, int, error) {
 		claim := NewClaim()
 		err := claim.PopulateFromDB(rows)
 		value := map[string]interface{}{}
-		err = json.Unmarshal([]byte(claim.JSONValue.String), &value)
-		if err != nil {
-			return nil, 0, errors.Prefix("could not parse json for value: ", err)
+		if !claim.JSONValue.IsNull() {
+			err = json.Unmarshal([]byte(claim.JSONValue.String), &value)
+			if err != nil {
+				return nil, 0, errors.Prefix("could not parse json for value: ", err)
+			}
 		}
 		claim.Value = value
 		lastID = int(claim.ID)
@@ -113,7 +118,8 @@ func (c *Claim) PopulateFromDB(rows *sql.Rows) error {
 		c.Duration,
 		&c.NSFW,
 		c.ThumbnailURL,
-		c.Fee)
+		c.Fee,
+		c.TagsStr)
 	if err != nil {
 		err = errors.Prefix("Scan Err:", err)
 	}

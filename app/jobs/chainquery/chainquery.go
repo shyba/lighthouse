@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/lbryio/lighthouse/app/db"
@@ -53,10 +54,14 @@ SELECT c.id,
     c.duration,
     c.is_nsfw,
 	c.thumbnail_url,
-	c.fee
+	c.fee,
+ 	GROUP_CONCAT(t.tag) as tags 
 FROM claim c LEFT JOIN claim p on p.claim_id = c.publisher_id 
+LEFT JOIN claim_tag ct ON ct.claim_id = c.claim_id 
+LEFT JOIN tag t ON ct.tag_id = t.id 
 WHERE c.id > ? ` + channelFilter + `
 AND c.modified_at >= ? 
+GROUP BY c.id 
 ORDER BY c.id 
 LIMIT ?`
 	return query
@@ -106,6 +111,7 @@ func Sync(channelID *string) {
 			if claim.ReleaseTimeUnix.IsNull() {
 				claim.ReleaseTime = claim.TransactionTime
 			}
+			claim.Tags = strings.Split(claim.TagsStr.String, ",")
 			if claim.BidState == "Spent" || claim.BidState == "Expired" {
 				claim.Delete(p)
 			} else {
