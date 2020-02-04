@@ -12,6 +12,7 @@ import (
 	"github.com/lbryio/lighthouse/app/util"
 
 	"github.com/lbryio/lbry.go/v2/extras/api"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
@@ -75,7 +76,7 @@ func initAPIServer() {
 			logrus.Debug(color.GreenString(consoleText))
 		} else {
 			if response.Status >= http.StatusInternalServerError && !util.Debugging {
-				logrus.Error(color.RedString(consoleText + ": " + err.Error()))
+				logrus.Error(color.RedString(consoleText + ": (" + request.URL.RawQuery + ") : " + errors.FullTrace(response.Error)))
 				//util.SendToSlack(strconv.Itoa(response.Status) + " " + request.Method + " " + request.URL.Path + ": " + errors.FullTrace(response.Error))
 			} else {
 				logrus.Debug(color.RedString(consoleText + ": " + err.Error()))

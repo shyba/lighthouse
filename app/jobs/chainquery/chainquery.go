@@ -100,8 +100,8 @@ func Sync(channelID *string) {
 		claims, syncState.LastID, err = model.GetClaimsFromDBRows(rows)
 		for _, claim := range claims {
 			if claim.JSONValue.IsNull() {
-				logrus.Debug("Claim: ", claim.AsJSON())
-				logrus.Error("Failed to process claim ", claim.ClaimID, " due to missing value")
+				logrus.Tracef("Claim: ", claim.AsJSON())
+				logrus.Debug("Failed to process JSONValue for ", claim.ClaimID)
 				continue
 			}
 			txTime := null.NewTime(time.Unix(int64(claim.TransactionTimeUnix.Uint64), 0), true)

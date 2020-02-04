@@ -77,6 +77,9 @@ func GetClaimsFromDBRows(rows *sql.Rows) ([]Claim, int, error) {
 	for rows.Next() {
 		claim := NewClaim()
 		err := claim.PopulateFromDB(rows)
+		if err != nil {
+			return nil, 0, errors.Prefix("Failed to populate from db result:  ", err)
+		}
 		value := map[string]interface{}{}
 		if !claim.JSONValue.IsNull() {
 			err = json.Unmarshal([]byte(claim.JSONValue.String), &value)
