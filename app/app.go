@@ -74,9 +74,11 @@ func initAPIServer() {
 		if err == nil {
 			logrus.Debug(color.GreenString(consoleText))
 		} else {
-			logrus.Error(color.RedString(consoleText + ": " + err.Error()))
 			if response.Status >= http.StatusInternalServerError && !util.Debugging {
+				logrus.Error(color.RedString(consoleText + ": " + err.Error()))
 				//util.SendToSlack(strconv.Itoa(response.Status) + " " + request.Method + " " + request.URL.Path + ": " + errors.FullTrace(response.Error))
+			} else {
+				logrus.Debug(color.RedString(consoleText + ": " + err.Error()))
 			}
 		}
 	}

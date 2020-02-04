@@ -4,7 +4,7 @@ LABEL MAINTAINER="beamer"
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
-    apt-get -yq install apt-utils tzdata wait-for-it && \
+    apt-get -yq install apt-utils tzdata wait-for-it ca-certificates && \
     apt-get autoclean -y && \
     rm -rf /var/lib/apt/lists/*
 
