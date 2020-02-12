@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/lbryio/lighthouse/app/es"
+	"github.com/lbryio/lighthouse/app/internal/metrics"
 	"github.com/lbryio/lighthouse/app/validator"
 
 	"github.com/lbryio/lbry.go/v2/extras/api"
@@ -30,15 +34,17 @@ type searchRequest struct {
 	NSFW        *bool
 	Resolve     bool
 	//Debug params
-	ClaimID *string
-	Score   bool
-	Source  bool
-	Debug   bool
+	ClaimID    *string
+	Score      bool
+	Source     bool
+	Debug      bool
+	searchType string
+	terms      int
 }
 
 // Search API returns the name and claim id of the results based on the query passed.
 func Search(r *http.Request) api.Response {
-
+	start := time.Now()
 	searchRequest := searchRequest{}
 
 	err := api.FormValues(r, &searchRequest, []*v.FieldRules{
@@ -52,7 +58,9 @@ func Search(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: errors.Err(err), Status: http.StatusBadRequest}
 	}
+	searchRequest.searchType = "general"
 	searchRequest.S = checkForSpecialHandling(searchRequest.S)
+	searchRequest.terms = len(strings.Split(searchRequest.S, " "))
 	query := searchRequest.newQuery()
 	t, err := query.Source()
 	if err != nil {
@@ -107,6 +115,9 @@ func Search(r *http.Request) api.Response {
 			results = append(results, result)
 		}
 	}
-
+	metrics.SearchDuration.WithLabelValues(
+		searchRequest.searchType,
+		strconv.Itoa(searchRequest.terms)).
+		Observe(time.Since(start).Seconds())
 	return api.Response{Data: results}
 }

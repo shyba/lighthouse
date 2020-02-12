@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/lbryio/lighthouse/app/es"
+	"github.com/lbryio/lighthouse/app/internal/metrics"
 	"github.com/sirupsen/logrus"
 
 	"gopkg.in/olivere/elastic.v6"
@@ -29,7 +31,7 @@ type autoCompleteRequest struct {
 // AutoComplete returns the name of claims that it matches against for auto completion.
 func AutoComplete(r *http.Request) api.Response {
 	acRequest := autoCompleteRequest{}
-
+	start := time.Now()
 	err := api.FormValues(r, &acRequest, []*v.FieldRules{
 		v.Field(&acRequest.S, v.Required, v.Length(1, 0)),
 		v.Field(&acRequest.Size, v.Max(10000)),
@@ -105,7 +107,7 @@ func AutoComplete(r *http.Request) api.Response {
 			names = append(names, result.Name)
 		}
 	}
-
+	metrics.AutoCompleteDuration.Observe(time.Since(start).Seconds())
 	return api.Response{Data: names}
 
 }
