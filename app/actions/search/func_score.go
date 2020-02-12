@@ -47,8 +47,8 @@ func releaseTime7dFuncScoreQuery() *elastic.GaussDecayFunction {
 		FieldName("release_time").
 		Origin(time.Now()).
 		Scale("1d").
-		Decay(0.10).
-		Weight(0.2)
+		Decay(0.20).
+		Weight(0.1)
 }
 
 func releaseTime30dFuncScoreQuery() *elastic.GaussDecayFunction {
@@ -58,8 +58,8 @@ func releaseTime30dFuncScoreQuery() *elastic.GaussDecayFunction {
 		Origin(time.Now()).
 		Offset("30d").
 		Scale("1d").
-		Decay(0.10).
-		Weight(0.2)
+		Decay(0.20).
+		Weight(0.1)
 
 }
 
@@ -71,7 +71,7 @@ func releaseTime90dFuncScoreQuery() *elastic.GaussDecayFunction {
 		Offset("90d").
 		Scale("30d").
 		Decay(0.50).
-		Weight(0.2)
+		Weight(0.1)
 
 }
 
