@@ -61,6 +61,9 @@ func Search(r *http.Request) api.Response {
 	searchRequest.searchType = "general"
 	searchRequest.S = checkForSpecialHandling(searchRequest.S)
 	searchRequest.terms = len(strings.Split(searchRequest.S, " "))
+	if searchRequest.RelatedTo != nil {
+		searchRequest.searchType = "related_content"
+	}
 	query := searchRequest.newQuery()
 	t, err := query.Source()
 	if err != nil {

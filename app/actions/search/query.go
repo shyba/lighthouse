@@ -334,7 +334,6 @@ func (r searchRequest) claimTypeFilter() *elastic.MatchQuery {
 
 func (r searchRequest) relatedContentFilter() *elastic.MatchQuery {
 	if r.RelatedTo != nil {
-		r.searchType = "related_content"
 		return streamOnlyMatch
 	}
 	return nil
