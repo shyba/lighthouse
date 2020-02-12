@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	// ServerErrors metric to capture errors from api
 	ServerErrors = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "lighthouse",
 		Subsystem: "search",
@@ -13,6 +14,7 @@ var (
 		Help:      "The error count per api",
 	})
 
+	// SearchDuration metric to capture the duration of each search request
 	SearchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "lighthouse",
 		Subsystem: "search",
@@ -20,6 +22,7 @@ var (
 		Help:      "The duration for search by type and term count",
 	}, []string{"type", "term_count"})
 
+	// AutoCompleteDuration metric to capture the duration of each auto complete request
 	AutoCompleteDuration = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "lighthouse",
 		Subsystem: "auto_complete",
