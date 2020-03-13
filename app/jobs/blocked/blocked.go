@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/model"
 
@@ -13,7 +14,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ProcessedBlockedList() {
+var blockedChannels = []string{
+	"565be843d5f231d37a037ee6d5276dc1618b5ca3",
+}
+
+// processBlockedList runs through the current blocked list and tries to delete the entry if it exists.
+func ProcessBlockedList() {
 	c := lbryinc.NewClient("", nil)
 	r, err := c.Call("file", "list_blocked", nil)
 	if err != nil {
@@ -45,6 +51,21 @@ func ProcessedBlockedList() {
 		claim := model.NewClaim()
 		claim.ClaimID = claimID
 		claim.Delete(p)
+	}
+	for _, channel := range blockedChannels {
+		rows, err := db.Chainquery.Query("SELECT claim_id FROM claim WHERE publisher_id =?", channel)
+		if err != nil {
+			logrus.Error(errors.Err(err))
+		}
+		for rows.Next() {
+			claim := model.NewClaim()
+			err := rows.Scan(&claim.ClaimID)
+			if err != nil {
+				logrus.Error(errors.Err(err))
+				continue
+			}
+			claim.Delete(p)
+		}
 	}
 	err = p.Flush()
 	if err != nil {
