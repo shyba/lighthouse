@@ -46,9 +46,10 @@ func releaseTime7dFuncScoreQuery() *elastic.GaussDecayFunction {
 	return elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
-		Scale("1d").
-		Decay(0.20).
-		Weight(0.1)
+		Offset("7d").
+		Scale("7d").
+		Decay(0.50).
+		Weight(0.11)
 }
 
 func releaseTime30dFuncScoreQuery() *elastic.GaussDecayFunction {
@@ -57,32 +58,32 @@ func releaseTime30dFuncScoreQuery() *elastic.GaussDecayFunction {
 		FieldName("release_time").
 		Origin(time.Now()).
 		Offset("30d").
-		Scale("1d").
-		Decay(0.20).
-		Weight(0.1)
+		Scale("30d").
+		Decay(0.50).
+		Weight(0.12)
 
 }
 
 func releaseTime90dFuncScoreQuery() *elastic.GaussDecayFunction {
-	//After 90 days it loses 50% of boost every month
+	//After 90 days it loses 50% of boost by 1 month
 	return elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Offset("90d").
-		Scale("30d").
+		Scale("90d").
 		Decay(0.50).
-		Weight(0.1)
+		Weight(0.13)
 
 }
 
 func releaseTime1yFuncScoreQuery() *elastic.GaussDecayFunction {
-	//The first year gets full credit, after every month loses 10%
+	//The first year gets full credit, over 5 years it loses 10%
 	return elastic.NewGaussDecayFunction().
 		FieldName("release_time").
 		Origin(time.Now()).
 		Offset("365d").
-		Scale("1m"). //5 years
-		Decay(0.1).
+		Scale("1825d"). //5 years
+		Decay(0.9).
 		Weight(1.0)
 }
 
