@@ -16,6 +16,7 @@ import (
 
 var blockedChannels = []string{
 	"565be843d5f231d37a037ee6d5276dc1618b5ca3",
+	"3dc1703d218fdc6c1cdaa1b32dbd6c143554ba4b",
 }
 
 // ProcessBlockedList runs through the current blocked list and tries to delete the entry if it exists.
