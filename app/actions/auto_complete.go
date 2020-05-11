@@ -91,6 +91,7 @@ func AutoComplete(r *http.Request) api.Response {
 		Name string `json:"name"`
 	}
 	names := make([]string, 0, len(searchResults.Hits.Hits))
+	preventDups := make(map[string]string, 0)
 	for _, hit := range searchResults.Hits.Hits {
 		if hit.Source != nil {
 			data, err := hit.Source.MarshalJSON()
@@ -104,7 +105,10 @@ func AutoComplete(r *http.Request) api.Response {
 				logrus.Error(err)
 				continue
 			}
-			names = append(names, result.Name)
+			if _, ok := preventDups[result.Name]; !ok {
+				names = append(names, result.Name)
+				preventDups[result.Name] = result.Name
+			}
 		}
 	}
 	metrics.AutoCompleteDuration.Observe(time.Since(start).Seconds())
