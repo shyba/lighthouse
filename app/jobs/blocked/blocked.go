@@ -7,6 +7,7 @@ import (
 	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/model"
+	"github.com/lbryio/lighthouse/app/util"
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/lbryinc"
@@ -50,6 +51,21 @@ func ProcessBlockedList() {
 			continue
 		}
 		claimID := strings.Split(outpoint, ":")[0]
+		//If its a channel that is blocked, remove all of its claims as well.
+		rows, err := db.Chainquery.Query("SELECT claim_id FROM claim WHERE publisher_id =?", claimID)
+		if err != nil {
+			logrus.Error(errors.Err(err))
+		}
+		for rows.Next() {
+			claim := model.NewClaim()
+			err := rows.Scan(&claim.ClaimID)
+			if err != nil {
+				logrus.Error(errors.Err(err))
+				continue
+			}
+			claim.Delete(p)
+		}
+		util.CloseRows(rows)
 		claim := model.NewClaim()
 		claim.ClaimID = claimID
 		claim.Delete(p)
@@ -68,6 +84,7 @@ func ProcessBlockedList() {
 			}
 			claim.Delete(p)
 		}
+		util.CloseRows(rows)
 	}
 	err = p.Flush()
 	if err != nil {
