@@ -37,6 +37,25 @@ git clone https://github.com/lbryio/lighthouse
 >You are now up and running! You can connect to lighthouse at http://localhost:50005.
 Lighthouse will continue syncing in the background. It usually takes ~15 minutes before all claims are up to date in the database.
 
+### F.A.Q
+
+##### If you get the following error that contains 
+
+>To resolve this error you will want to access the dev console of Kibana and run the following query to unlock the index 
+>`FORBIDDEN/12/index read-only / allow delete (api)]`.
+>It commonly happens when you runing out of disk space and elastic search will lock the index from changes.
+
+```
+PUT claims/_settings
+{
+  "index": {
+    "blocks": {
+      "read_only_allow_delete": "false"
+    }
+  }
+}
+```
+
 ## Contributing
 
 Contributions to this project are welcome, encouraged, and compensated. For more details, see [lbry.com/faq/contributing](https://lbry.com/faq/contributing)
