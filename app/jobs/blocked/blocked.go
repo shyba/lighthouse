@@ -21,10 +21,19 @@ var blockedChannels = []string{
 	"b8b4f68a4e9d9189552e70c508c92cf7b52e9763",
 }
 
-// ProcessBlockedList runs through the current blocked list and tries to delete the entry if it exists.
 func ProcessBlockedList() {
+	processListForRemoval("list_blocked")
+}
+
+func ProcessFilteredList() {
+	processListForRemoval("list_filtered")
+}
+
+// processListForRemoval runs through the passed list and tries to delete the entry if it exists or if its a channel to
+// delete the claims associated with it from the lighthouse elastic db.
+func processListForRemoval(list string) {
 	c := lbryinc.NewClient("", nil)
-	r, err := c.Call("file", "list_blocked", nil)
+	r, err := c.Call("file", list, nil)
 	if err != nil {
 		logrus.Error(errors.Err(err))
 		return

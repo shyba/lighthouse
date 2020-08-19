@@ -19,6 +19,7 @@ func Start() {
 	scheduler.Every(15).Minutes().Do(chainquery.Sync, channels)
 	scheduler.Every(6).Hours().Do(internalapis.Sync)
 	scheduler.Every(1).Minutes().Do(blocked.ProcessBlockedList)
+	scheduler.Every(1).Minutes().Do(blocked.ProcessFilteredList)
 
 	cronRunning = scheduler.Start()
 }
