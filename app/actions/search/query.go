@@ -256,6 +256,10 @@ func (r searchRequest) getFilters() []elastic.Query {
 		filters = append(filters, nsfwFilter)
 	}
 
+	if freeFilter := r.freeContentFilter(); freeFilter != nil {
+		filters = append(filters, freeFilter)
+	}
+
 	if contentTypeFilter := r.contentTypeFilter(); contentTypeFilter != nil {
 		filters = append(filters, contentTypeFilter)
 	}
@@ -359,6 +363,14 @@ func (r searchRequest) nsfwFilter() elastic.Query {
 			return elastic.NewBoolQuery().MustNot(termsQuery, nsfwMatch)
 		}
 		return elastic.NewBoolQuery().Should(termsQuery, nsfwMatch).MinimumShouldMatch("1")
+	}
+	return nil
+}
+
+func (r searchRequest) freeContentFilter() elastic.Query {
+	if r.FreeOnly != nil && *r.FreeOnly {
+		freeMatch := elastic.NewMatchQuery("fee", 0.0)
+		return elastic.NewBoolQuery().Must(freeMatch)
 	}
 	return nil
 }
