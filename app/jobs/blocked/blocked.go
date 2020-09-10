@@ -21,10 +21,12 @@ var blockedChannels = []string{
 	"b8b4f68a4e9d9189552e70c508c92cf7b52e9763",
 }
 
+// ProcessBlockedList removes any claims and channels associated with the blocked list
 func ProcessBlockedList() {
 	processListForRemoval("list_blocked")
 }
 
+// ProcessFilteredList removes any claims and channels associated with the filtered list
 func ProcessFilteredList() {
 	processListForRemoval("list_filtered")
 }
