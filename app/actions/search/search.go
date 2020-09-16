@@ -27,6 +27,8 @@ type searchRequest struct {
 	Channel   *string
 	ChannelID *string
 	RelatedTo *string
+	SortBy    *string
+	Include   *string
 	//Should change these calls in the app
 	ContentType *string `json:"contentType"`
 	MediaType   *string `json:"mediaType"`
@@ -70,9 +72,15 @@ func Search(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: errors.Err("%s: for query -s %s", err, t)}
 	}
+	includes := []string{"name", "claimId"}
+	if searchRequest.Include != nil {
+		additionfields := strings.Split(*searchRequest.Include, ",")
+		includes = append(includes, additionfields...)
+	}
 	sourceContext := elastic.NewFetchSourceContext(true).Exclude("value")
 	if !searchRequest.Source {
-		sourceContext = sourceContext.Include("name", "claimId")
+		includes = append(includes)
+		sourceContext = sourceContext.Include(includes...)
 		if searchRequest.Resolve {
 			sourceContext = sourceContext.Include("channel", "channel_claim_id", "title", "thumbnail_url", "release_time", "fee", "nsfw", "duration")
 		}
@@ -97,6 +105,10 @@ func Search(r *http.Request) api.Response {
 			return api.Response{Error: errors.Err(err)}
 		}
 		return api.Response{Data: searchResults}
+	}
+	if searchRequest.SortBy != nil {
+		sortBy := strings.TrimPrefix(*searchRequest.SortBy, "^")
+		service.Sort(sortBy, strings.Contains(*searchRequest.SortBy, "^"))
 	}
 	searchResults, err := service.Do(context.Background())
 	if err != nil {

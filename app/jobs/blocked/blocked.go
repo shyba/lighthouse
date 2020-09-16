@@ -66,6 +66,7 @@ func processListForRemoval(list string) {
 		rows, err := db.Chainquery.Query("SELECT claim_id FROM claim WHERE publisher_id =?", claimID)
 		if err != nil {
 			logrus.Error(errors.Err(err))
+			continue
 		}
 		for rows.Next() {
 			claim := model.NewClaim()
