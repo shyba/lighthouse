@@ -2,6 +2,7 @@ package blocked
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 
@@ -77,7 +78,9 @@ func processListForRemoval(list string) {
 		result := db.Chainquery.QueryRow("SELECT claim_id FROM claim WHERE transaction_hash_update =? AND vout_update=?", txID, vout)
 		err := result.Scan(&claimID)
 		if err != nil {
-			logrus.Errorf("Could not grab claimID of outpoint from chainquery[%s]: %s", outpoint, err.Error())
+			if !errors.Is(err, sql.ErrNoRows) {
+				logrus.Errorf("Could not grab claimID of outpoint from chainquery[%s]: %s", outpoint, err.Error())
+			}
 			continue
 		}
 		//If its a channel that is blocked, remove all of its claims as well.
