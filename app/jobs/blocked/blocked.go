@@ -2,6 +2,7 @@ package blocked
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/lbryio/lighthouse/app/db"
@@ -61,7 +62,24 @@ func processListForRemoval(list string) {
 			logrus.Error("Could not convert outpoint to string")
 			continue
 		}
-		claimID := strings.Split(outpoint, ":")[0]
+		split := strings.Split(outpoint, ":")
+		txID := split[0]
+		vout := int64(0)
+		if len(split) > 0 {
+			voutStr := split[1]
+			vout, err = strconv.ParseInt(voutStr, 10, 64)
+			if err != nil {
+				logrus.Error("Could not convert outpoint vout to int64: ", err)
+				continue
+			}
+		}
+		var claimID string
+		result := db.Chainquery.QueryRow("SELECT claim_id FROM claim WHERE transaction_hash_update =? AND vout_update=?", txID, vout)
+		err := result.Scan(&claimID)
+		if err != nil {
+			logrus.Error("Could not grab claimID of outpoint from chainquery: ", err)
+			continue
+		}
 		//If its a channel that is blocked, remove all of its claims as well.
 		rows, err := db.Chainquery.Query("SELECT claim_id FROM claim WHERE publisher_id =?", claimID)
 		if err != nil {
