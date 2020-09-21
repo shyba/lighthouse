@@ -69,7 +69,7 @@ func processListForRemoval(list string) {
 			voutStr := split[1]
 			vout, err = strconv.ParseInt(voutStr, 10, 64)
 			if err != nil {
-				logrus.Error("Could not convert outpoint vout to int64: ", err)
+				logrus.Errorf("Could not convert outpoint vout to int64[%s]: %s ", outpoint, err.Error())
 				continue
 			}
 		}
@@ -77,7 +77,7 @@ func processListForRemoval(list string) {
 		result := db.Chainquery.QueryRow("SELECT claim_id FROM claim WHERE transaction_hash_update =? AND vout_update=?", txID, vout)
 		err := result.Scan(&claimID)
 		if err != nil {
-			logrus.Error("Could not grab claimID of outpoint from chainquery: ", err)
+			logrus.Errorf("Could not grab claimID of outpoint from chainquery[%s]: %s", outpoint, err.Error())
 			continue
 		}
 		//If its a channel that is blocked, remove all of its claims as well.
