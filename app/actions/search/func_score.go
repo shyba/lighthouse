@@ -7,7 +7,7 @@ import (
 )
 
 func controllingBoostQuery() *elastic.ConstantScoreQuery {
-	return elastic.NewConstantScoreQuery(elastic.NewMatchQuery("bid_state", "Controlling")).Boost(50)
+	return elastic.NewConstantScoreQuery(elastic.NewMatchQuery("bid_state", "Controlling")).Boost(100)
 }
 
 func thumbnailBoostQuery() *elastic.ConstantScoreQuery {
