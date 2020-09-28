@@ -6,6 +6,8 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
+const effectiveFactor = 2
+
 func controllingBoostQuery() *elastic.ConstantScoreQuery {
 	return elastic.NewConstantScoreQuery(elastic.NewMatchQuery("bid_state", "Controlling")).Boost(300)
 }
@@ -34,7 +36,7 @@ func claimWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
 func channelWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
 	score := elastic.NewFieldValueFactorFunction().
 		Field("certificate_amount").
-		//Factor(effectiveFactor).
+		Factor(effectiveFactor).
 		Modifier("log1p").
 		Missing(1)
 
