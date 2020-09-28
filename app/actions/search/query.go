@@ -35,6 +35,7 @@ func (r searchRequest) newQuery() *elastic.FunctionScoreQuery {
 	min.Should(r.moreLikeThis())
 	min.Should(r.matchPhraseName())
 	min.Should(r.matchName())
+	min.Should(r.matchChannelName())
 	//min.Should(r.nameContains())
 	//min.Should(r.titleContains())
 	//min.Should(r.descriptionContains())
@@ -179,7 +180,7 @@ func (r searchRequest) matchPhraseName() *elastic.MatchPhraseQuery {
 }
 
 func (r searchRequest) matchName() *elastic.BoolQuery {
-	boost := 10.0
+	boost := 5.0
 	if r.S[0] == '@' {
 		boost = boost * 10
 	}
@@ -187,6 +188,13 @@ func (r searchRequest) matchName() *elastic.BoolQuery {
 		Should(elastic.NewMatchQuery("name", r.S)).
 		Boost(boost).
 		QueryName("name-match")
+}
+
+func (r searchRequest) matchChannelName() *elastic.BoolQuery {
+	return elastic.NewBoolQuery().
+		Must(elastic.NewMatchQuery("name", "@"+r.S)).
+		Boost(10.0).
+		QueryName("channel-name-match")
 }
 
 func (r searchRequest) matchChannel() *elastic.BoolQuery {
