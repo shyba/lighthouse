@@ -179,19 +179,14 @@ func (r searchRequest) matchPhraseName() *elastic.MatchPhraseQuery {
 }
 
 func (r searchRequest) matchName() *elastic.BoolQuery {
+	boost := 10.0
 	if r.S[0] == '@' {
-		matchNameBoost := elastic.NewBoolQuery().
-			Should(elastic.NewMatchQuery("name", r.S)).
-			Must(ChannelOnlyMatch).
-			Boost(10)
-		return elastic.NewBoolQuery().
-			QueryName("name-match-@boost").
-			Should(elastic.NewMatchQuery("name", r.S)).
-			Should(matchNameBoost)
+		boost = boost * 10
 	}
-	return elastic.NewBoolQuery().Should(elastic.NewMatchQuery("name", r.S)).
+	return elastic.NewBoolQuery().
+		Should(elastic.NewMatchQuery("name", r.S)).
+		Boost(boost).
 		QueryName("name-match")
-
 }
 
 func (r searchRequest) matchChannel() *elastic.BoolQuery {
