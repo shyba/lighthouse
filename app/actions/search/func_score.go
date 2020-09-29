@@ -26,7 +26,7 @@ func thumbnailBoostQuery() *elastic.ConstantScoreQuery {
 func claimWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
 	score := elastic.NewFieldValueFactorFunction().
 		Field("effective_amount").
-		//Factor(effectiveFactor).
+		Factor(effectiveFactor).
 		Modifier("log1p").
 		Missing(1)
 
@@ -35,7 +35,7 @@ func claimWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
 
 func channelWeightFuncScoreQuery() *elastic.FunctionScoreQuery {
 	score := elastic.NewFieldValueFactorFunction().
-		Field("effective_amount").
+		Field("certificate_amount").
 		Factor(effectiveFactor).
 		Modifier("log1p").
 		Missing(1)
