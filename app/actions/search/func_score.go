@@ -6,7 +6,7 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
-const effectiveFactor = 2
+const effectiveFactor = 20
 
 func controllingBoostQuery() *elastic.ConstantScoreQuery {
 	return elastic.NewConstantScoreQuery(elastic.NewMatchQuery("bid_state", "Controlling")).Boost(300)
