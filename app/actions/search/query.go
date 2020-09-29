@@ -115,11 +115,11 @@ func (r searchRequest) titleContains() *elastic.QueryStringQuery {
 	return elastic.NewQueryStringQuery("*" + r.escaped() + "*").
 		QueryName("title-contains").
 		Field("title").
-		Boost(1)
+		Boost(2)
 }
 
 func (r searchRequest) matchTitle() *elastic.MatchQuery {
-	return elastic.NewMatchQuery("title", r.washed()).
+	return elastic.NewMatchQuery("title", r.S).
 		QueryName("title-match").
 		Boost(1)
 }
@@ -149,28 +149,8 @@ func (r searchRequest) matchPhraseDescription() *elastic.MatchPhraseQuery {
 		Boost(2)
 }
 
-func (r searchRequest) matchCompressedName() *elastic.BoolQuery {
-	compressed := strings.Replace(r.S, " ", "", -1)
-	matchName := elastic.NewMatchQuery("name", compressed).
-		Boost(5)
-	return elastic.NewBoolQuery().
-		QueryName("name-match-@compressed").
-		Must(ChannelOnlyMatch).
-		Must(matchName)
-}
-
-func (r searchRequest) matchCompressedChannel() *elastic.BoolQuery {
-	compressed := strings.Replace(r.S, " ", "", -1)
-	matchChannel := elastic.NewMatchQuery("channel", compressed).
-		Boost(3)
-	return elastic.NewBoolQuery().
-		QueryName("channel-match-@compressed").
-		Must(streamOnlyMatch).
-		Must(matchChannel)
-}
-
 func (r searchRequest) matchPhraseName() *elastic.MatchPhraseQuery {
-	boost := 3.0
+	boost := 2.0
 	if r.S[0] == '@' {
 		boost = boost * 10
 	}
@@ -180,7 +160,7 @@ func (r searchRequest) matchPhraseName() *elastic.MatchPhraseQuery {
 }
 
 func (r searchRequest) matchName() *elastic.BoolQuery {
-	boost := 5.0
+	boost := 1.0
 	if r.S[0] == '@' {
 		boost = boost * 10
 	}
@@ -191,25 +171,42 @@ func (r searchRequest) matchName() *elastic.BoolQuery {
 }
 
 func (r searchRequest) matchChannelName() *elastic.BoolQuery {
+	//This is what returns a channel as the first result when searching
 	return elastic.NewBoolQuery().
-		Must(elastic.NewMatchQuery("name", "@"+r.S)).
-		Boost(10.0).
-		QueryName("channel-name-match")
+		Must(elastic.NewMatchPhraseQuery("name", r.S)).
+		Must(ChannelOnlyMatch).
+		Boost(10).
+		QueryName("channel-phrase-match")
+}
+
+func (r searchRequest) matchCompressedName() *elastic.BoolQuery {
+	//This is what returns channels with multiple words as the first result when searching
+	compressed := strings.Replace(r.S, " ", "", -1)
+	matchName := elastic.NewMatchQuery("name", compressed).
+		Boost(10)
+	return elastic.NewBoolQuery().
+		QueryName("name-match-@compressed").
+		Must(ChannelOnlyMatch).
+		Must(matchName)
 }
 
 func (r searchRequest) matchChannel() *elastic.BoolQuery {
 	channelMatch := elastic.NewMatchQuery("channel", r.S)
-	if r.S[0] == '@' {
-		return elastic.NewBoolQuery().
-			QueryName("channel-match-@boost").
-			Must(streamOnlyMatch).
-			Must(channelMatch).Boost(5)
-	}
-
 	return elastic.NewBoolQuery().
-		QueryName("channel-match").
-		Must(channelMatch)
+		QueryName("channel-match-@boost").
+		Must(streamOnlyMatch).
+		Must(channelMatch).
+		Boost(5)
+}
 
+func (r searchRequest) matchCompressedChannel() *elastic.BoolQuery {
+	compressed := strings.Replace(r.S, " ", "", -1)
+	matchChannel := elastic.NewMatchPhraseQuery("channel", compressed).
+		Boost(5)
+	return elastic.NewBoolQuery().
+		QueryName("channel-match-@compressed").
+		Must(streamOnlyMatch).
+		Must(matchChannel)
 }
 
 func (r searchRequest) nameContains() *elastic.QueryStringQuery {
