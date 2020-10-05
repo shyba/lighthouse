@@ -23,6 +23,22 @@ var blockedChannels = []string{
 	"b8b4f68a4e9d9189552e70c508c92cf7b52e9763",
 }
 
+var blockedClaims = []string{
+	"565be843d5f231d37a037ee6d5276dc1618b5ca3",
+	"3dc1703d218fdc6c1cdaa1b32dbd6c143554ba4b",
+	"b8b4f68a4e9d9189552e70c508c92cf7b52e9763",
+	"6be2cbc811bf3106c51ebaf154442d1d231a0104",
+	"0bc958169c77733b5d22bcc860e426713c9b6fda",
+	"5894d3c795fc475b23fbb4e5dca1b59cd6222254",
+	"1e2c80f572c79b91ed4801932da6e6b2c95545ac",
+	"b5de24be04dcbef2becdcbbcdf32fcd4ed61ca4d",
+	"9fc0341d2c44a0c2177983cd56ae57c7bf6f35b9",
+	"0db48d6ae29035a62ce460ac40b7b05adab99c29",
+	"521dca9f2cdc2962c37237d09c8126fa39c56e1b",
+	"aa1b30af054fabf370fe5ca265296e9354844847",
+	"1092b755f939893d459dc8b136e8be2b82ecf4ca",
+}
+
 // ProcessBlockedList removes any claims and channels associated with the blocked list
 func ProcessBlockedList() {
 	processListForRemoval("list_blocked")
@@ -118,6 +134,11 @@ func processListForRemoval(list string) {
 			claim.Delete(p)
 		}
 		util.CloseRows(rows)
+	}
+	for _, channel := range blockedClaims {
+		claim := model.NewClaim()
+		claim.ClaimID = channel
+		claim.Delete(p)
 	}
 	err = p.Flush()
 	if err != nil {
