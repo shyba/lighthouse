@@ -3,7 +3,9 @@ package search
 import "strings"
 
 var tayloredResults = map[string]string{
-	"silvano": "silvano trotta",
+	"silvano":        "@SilvanoTrotta",
+	"trotta":         "@SilvanoTrotta",
+	"silvano trotta": "@SilvanoTrotta",
 }
 
 func checkForSpecialHandling(s string) string {

@@ -37,9 +37,12 @@ var blockedChannels = []string{
 	"aa1b30af054fabf370fe5ca265296e9354844847",
 	"1092b755f939893d459dc8b136e8be2b82ecf4ca",
 	"7685064d832ced149c5c04e95bcebe5f005d2c46",
+	"1580d744fe8cc25c876e2742db5be8b0e22801c9",
 }
 
-var blockedClaims []string
+var blockedClaims = []string{
+	"1fad0acce83a4006ad46788bfc3de197bf421a21",
+}
 
 // ProcessBlockedList removes any claims and channels associated with the blocked list
 func ProcessBlockedList() {
