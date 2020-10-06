@@ -12,7 +12,7 @@ var tayloredResults = map[string]string{
 	"jordan peterson": "@jordanbpeterson",
 	"quartering":      "@thequartering",
 	"bombards":        "@Bombards_Body_Language",
-	"body language":   "@Bombards_Body_Language",
+	"stefan molyneux": "@freedomain",
 }
 
 func checkForSpecialHandling(s string) string {
