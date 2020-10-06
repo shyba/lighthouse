@@ -3,7 +3,7 @@ package search
 import "strings"
 
 var tayloredResults = map[string]string{
-	"porn": "porn sex anal oral creampie",
+	"silvano": "silvano trotta",
 }
 
 func checkForSpecialHandling(s string) string {
