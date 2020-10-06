@@ -14,10 +14,8 @@ func controllingBoostQuery() *elastic.ConstantScoreQuery {
 
 func thumbnailBoostQuery() *elastic.ConstantScoreQuery {
 	emptyThumbnail := elastic.NewMatchQuery("thumbnail_url", "")
-	thumbnailExists := elastic.NewExistsQuery("thumbnail_url")
 	notEmptyThumbnail := elastic.NewBoolQuery().
 		MustNot(emptyThumbnail).
-		Must(thumbnailExists).
 		QueryName("not-empty-thumbnail")
 	return elastic.NewConstantScoreQuery(notEmptyThumbnail).Boost(50)
 
