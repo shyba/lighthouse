@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/olivere/elastic.v6"
+
 	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/model"
@@ -119,6 +121,19 @@ func processListForRemoval(list string) {
 		claim.ClaimID = claimID
 		claim.Delete(p)
 	}
+	removeBlockedChannels(p)
+	removedBlockedClaims(p)
+	err = p.Flush()
+	if err != nil {
+		logrus.Error(err)
+	}
+	err = p.Close()
+	if err != nil {
+		logrus.Error(err)
+	}
+}
+
+func removeBlockedChannels(p *elastic.BulkProcessor) {
 	for _, channel := range blockedChannels {
 		rows, err := db.Chainquery.Query("SELECT claim_id FROM claim WHERE publisher_id =?", channel)
 		if err != nil {
@@ -135,17 +150,12 @@ func processListForRemoval(list string) {
 		}
 		util.CloseRows(rows)
 	}
+}
+
+func removedBlockedClaims(p *elastic.BulkProcessor) {
 	for _, channel := range blockedClaims {
 		claim := model.NewClaim()
 		claim.ClaimID = channel
 		claim.Delete(p)
-	}
-	err = p.Flush()
-	if err != nil {
-		logrus.Error(err)
-	}
-	err = p.Close()
-	if err != nil {
-		logrus.Error(err)
 	}
 }
