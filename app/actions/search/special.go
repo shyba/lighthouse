@@ -11,8 +11,8 @@ var tayloredResults = map[string]string{
 	"tim pool":              "timcast",
 	"jordan peterson":       "jordanbpeterson",
 	"quartering":            "thequartering",
-	"bombards":              "Bombards Body Language",
-	"bombard body language": "Bombards Body Language",
+	"bombards":              "Bombards_Body_Language",
+	"bombard body language": "Bombards_Body_Language",
 	"stefan molyneux":       "@freedomain",
 }
 
