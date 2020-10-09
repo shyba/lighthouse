@@ -6,6 +6,7 @@ var tayloredResults = map[string]string{
 	"silvano":                "@SilvanoTrotta",
 	"trotta":                 "@SilvanoTrotta",
 	"silvano trotta":         "@SilvanoTrotta",
+	"corbett":                "@CorbettReport",
 	"linux gamer":            "thelinuxgamer",
 	"linuxgamer":             "thelinuxgamer",
 	"tim pool":               "timcast",
