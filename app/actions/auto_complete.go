@@ -43,16 +43,30 @@ func AutoComplete(r *http.Request) api.Response {
 	replacer := strings.NewReplacer("/", "\\/", "[", "\\[", "]", "\\]")
 	acRequest.S = replacer.Replace(acRequest.S)
 
-	mmATD := elastic.NewMultiMatchQuery(acRequest.S).
-		Type("phrase_prefix").Slop(5).MaxExpansions(50).
-		Field("value.Claim.stream.metadata.author^3").
-		Field("value.Claim.stream.metadata.title^5").
-		Field("value.stream.metadata.description^2")
-	nested := elastic.NewNestedQuery("value", mmATD)
-	mmName := elastic.NewMultiMatchQuery(acRequest.S).
-		Type("phrase_prefix").Slop(5).MaxExpansions(50).
-		Field("name^4")
-	query := elastic.NewBoolQuery().Should(nested, mmName)
+	query := elastic.NewBoolQuery()
+
+    if acRequest.S[0] == '@' {
+        matchName := elastic.NewBoolQuery().
+            Should(elastic.NewMatchQuery("name", acRequest.S)).
+            Must(elastic.NewMatchQuery("claim_type", "channel"))
+
+        query.Should(matchName)
+    } else {
+        mmName := elastic.NewMultiMatchQuery(acRequest.S).
+            Type("phrase_prefix").Slop(5).MaxExpansions(50).
+            Field("name^4")
+        query.Should(mmName)
+
+	    mmATD := elastic.NewMultiMatchQuery(acRequest.S).
+		    Type("phrase_prefix").Slop(5).MaxExpansions(50).
+		    Field("value.Claim.stream.metadata.author^3").
+            Field("value.Claim.stream.metadata.title^5").
+            Field("value.stream.metadata.description^2")
+
+        nested := elastic.NewNestedQuery("value", mmATD)
+        query.Should(nested)
+    }
+
 	if acRequest.NSFW != nil {
 		query = query.Must(elastic.NewMatchQuery("nsfw", *acRequest.NSFW))
 	}
