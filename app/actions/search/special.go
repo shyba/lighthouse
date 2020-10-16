@@ -17,6 +17,7 @@ var tayloredResults = map[string]string{
 	"bombards body language": "Bombards_Body_Language",
 	"stefan molyneux":        "@freedomain",
 	"crypto wendy":           "CRYPTOWENDYO",
+	"Alex jones":             "alexjoneschannel",
 }
 
 func checkForSpecialHandling(s string) string {
