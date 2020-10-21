@@ -37,6 +37,7 @@ SELECT c.id,
 	c.name, 
 	p.name as channel, 
 	p.claim_id as channel_id, 
+    COALESCE(p.claim_count,1) as claim_count
 	c.bid_state, 
 	c.effective_amount, 
 	c.transaction_time, 
