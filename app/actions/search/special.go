@@ -18,6 +18,8 @@ var tayloredResults = map[string]string{
 	"stefan molyneux":        "@freedomain",
 	"crypto wendy":           "CRYPTOWENDYO",
 	"Alex jones":             "alexjoneschannel",
+	"styx":                   "Styxhexenhammer666",
+	"styxx":                  "Styxhexenhammer666",
 }
 
 func checkForSpecialHandling(s string) string {
