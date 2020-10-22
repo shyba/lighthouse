@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -29,4 +31,25 @@ var (
 		Name:      "duration",
 		Help:      "The duration for auto_complete by type and term count",
 	})
+
+	jobs = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "lighthouse",
+		Subsystem: "jobs",
+		Name:      "duration",
+		Help:      "The durations of the individual job processing",
+	}, []string{"job"})
+
+	// JobLoad metric for number of active calls by job
+	JobLoad = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "lighthouse",
+		Subsystem: "jobs",
+		Name:      "job_load",
+		Help:      "Number of active calls by job",
+	}, []string{"job"})
 )
+
+//Job helper function to make tracking metric one line deferral
+func Job(start time.Time, name string) {
+	duration := time.Since(start).Seconds()
+	jobs.WithLabelValues(name).Observe(duration)
+}

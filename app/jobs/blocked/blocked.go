@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/lbryio/lighthouse/app/internal/metrics"
 
 	"gopkg.in/olivere/elastic.v6"
 
@@ -46,11 +49,17 @@ var blockedClaims = []string{
 
 // ProcessBlockedList removes any claims and channels associated with the blocked list
 func ProcessBlockedList() {
+	metrics.JobLoad.WithLabelValues("blockedlist_sync").Inc()
+	defer metrics.JobLoad.WithLabelValues("blockedlist_sync").Dec()
+	defer metrics.Job(time.Now(), "blockedlist_sync")
 	processListForRemoval("list_blocked")
 }
 
 // ProcessFilteredList removes any claims and channels associated with the filtered list
 func ProcessFilteredList() {
+	metrics.JobLoad.WithLabelValues("filteredlist_sync").Inc()
+	defer metrics.JobLoad.WithLabelValues("filteredlist_sync").Dec()
+	defer metrics.Job(time.Now(), "filteredlist_sync")
 	processListForRemoval("list_filtered")
 }
 

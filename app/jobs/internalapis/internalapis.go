@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
+
+	"github.com/lbryio/lighthouse/app/internal/metrics"
 
 	"github.com/lbryio/lighthouse/app/actions/search"
 	"github.com/lbryio/lighthouse/app/db"
@@ -29,6 +32,9 @@ func Sync() {
 	if incSyncRunning || db.InternalAPIs == nil {
 		return
 	}
+	metrics.JobLoad.WithLabelValues("internalapis_sync").Inc()
+	defer metrics.JobLoad.WithLabelValues("internalapis_sync").Dec()
+	defer metrics.Job(time.Now(), "internalapis_sync")
 	incSyncRunning = true
 	defer endIncSync()
 	//syncViewCounts()

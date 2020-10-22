@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lbryio/lighthouse/app/internal/metrics"
+
 	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/model"
@@ -73,6 +75,9 @@ func Sync(channelID *string) {
 	if claimSyncRunning {
 		return
 	}
+	metrics.JobLoad.WithLabelValues("claim_sync").Inc()
+	defer metrics.JobLoad.WithLabelValues("claim_sync").Dec()
+	defer metrics.Job(time.Now(), "claim_sync")
 	claimSyncRunning = true
 	defer endClaimSync(channelID)
 	logrus.Debugf("running claim sync job...")
