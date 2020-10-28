@@ -17,35 +17,38 @@ import (
 
 // Claim is the document type specified as a struct stored in elasticsearch
 type Claim struct {
-	ID                     uint64                 `json:"id,omitempty"`
-	Name                   string                 `json:"name,omitempty"`
-	ClaimID                string                 `json:"claimId,omitempty"`
-	Channel                *null.String           `json:"channel,omitempty"`
-	ChannelClaimID         *null.String           `json:"channel_claim_id,omitempty"`
-	BidState               string                 `json:"bid_state,omitempty"`
-	EffectiveAmount        uint64                 `json:"effective_amount,omitempty"`
-	TransactionTimeUnix    null.Uint64            `json:"-"` //Could be null in mempool
-	TransactionTime        *null.Time             `json:"transaction_time,omitempty"`
-	ChannelEffectiveAmount uint64                 `json:"certificate_amount,omitempty"`
-	JSONValue              null.String            `json:"-"`
-	Value                  map[string]interface{} `json:"value,omitempty"`
-	Title                  *null.String           `json:"title,omitempty"`
-	Description            *null.String           `json:"description,omitempty"`
-	ReleaseTimeUnix        null.Uint64            `json:"-"`
-	ReleaseTime            *null.Time             `json:"release_time,omitempty"`
-	ContentType            *null.String           `json:"content_type,omitempty"`
-	CertValid              bool                   `json:"cert_valid,omitempty"`
-	ClaimType              *null.String           `json:"claim_type,omitempty"`
-	FrameWidth             *null.Uint64           `json:"frame_width,omitempty"`
-	FrameHeight            *null.Uint64           `json:"frame_height,omitempty"`
-	Duration               *null.Uint64           `json:"duration,omitempty"`
-	NSFW                   bool                   `json:"nsfw,omitempty"`
-	ViewCnt                *null.Uint64           `json:"view_cnt,omitempty"`
-	SubCnt                 *null.Uint64           `json:"sub_cnt,omitempty"`
-	ThumbnailURL           *null.String           `json:"thumbnail_url,omitempty"`
-	Fee                    *null.Float64          `json:"fee,omitempty"`
-	TagsStr                *null.String           `json:"-"`
-	Tags                   []string               `json:"tags,omitempty"`
+	ID                  uint64                 `json:"id,omitempty"`
+	Name                string                 `json:"name,omitempty"`
+	ClaimID             string                 `json:"claimId,omitempty"`
+	Channel             *null.String           `json:"channel,omitempty"`
+	ChannelClaimID      *null.String           `json:"channel_claim_id,omitempty"`
+	BidState            string                 `json:"bid_state,omitempty"`
+	EffectiveAmount     uint64                 `json:"effective_amount,omitempty"`
+	TransactionTimeUnix null.Uint64            `json:"-"` //Could be null in mempool
+	TransactionTime     *null.Time             `json:"transaction_time,omitempty"`
+	CertificateAmount   uint64                 `json:"certificate_amount,omitempty"`
+	JSONValue           null.String            `json:"-"`
+	Value               map[string]interface{} `json:"value,omitempty"`
+	Title               *null.String           `json:"title,omitempty"`
+	Description         *null.String           `json:"description,omitempty"`
+	ReleaseTimeUnix     null.Uint64            `json:"-"`
+	ReleaseTime         *null.Time             `json:"release_time,omitempty"`
+	ContentType         *null.String           `json:"content_type,omitempty"`
+	CertValid           bool                   `json:"cert_valid,omitempty"`
+	ClaimType           *null.String           `json:"claim_type,omitempty"`
+	FrameWidth          *null.Uint64           `json:"frame_width,omitempty"`
+	FrameHeight         *null.Uint64           `json:"frame_height,omitempty"`
+	Duration            *null.Uint64           `json:"duration,omitempty"`
+	NSFW                bool                   `json:"nsfw,omitempty"`
+	ViewCnt             *null.Uint64           `json:"view_cnt,omitempty"`
+	SubCnt              *null.Uint64           `json:"sub_cnt,omitempty"`
+	ThumbnailURL        *null.String           `json:"thumbnail_url,omitempty"`
+	Fee                 *null.Float64          `json:"fee,omitempty"`
+	TagsStr             *null.String           `json:"-"`
+	Tags                []string               `json:"tags,omitempty"`
+	ClaimCount          uint64                 `json:"claim_cnt,omitempty"`
+	EffectiveSum        uint64                 `json:"effective_sum,omitempty"`
+	ChannelEffectiveSum uint64                 `json:"channel_effective_sum,omitempty"`
 }
 
 // NewClaim creates an instance of Claim with default values for pointers.
@@ -103,11 +106,14 @@ func (c *Claim) PopulateFromDB(rows *sql.Rows) error {
 		&c.ID,
 		&c.Name,
 		c.Channel,
+		c.ClaimCount,
 		c.ChannelClaimID,
 		&c.BidState,
-		&c.EffectiveAmount,
+		c.EffectiveAmount,
+		c.EffectiveSum,
 		&c.TransactionTimeUnix,
-		&c.ChannelEffectiveAmount,
+		c.CertificateAmount,
+		c.ChannelEffectiveSum,
 		&c.ClaimID,
 		&c.JSONValue,
 		c.Title,

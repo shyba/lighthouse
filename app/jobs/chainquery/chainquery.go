@@ -106,6 +106,10 @@ func Sync(channelID *string) {
 		}
 		var claims []model.Claim
 		claims, syncState.LastID, err = model.GetClaimsFromDBRows(rows)
+		if err != nil {
+			logrus.Error(errors.Prefix("Failed to sync: ", err))
+			return
+		}
 		for _, claim := range claims {
 			if claim.JSONValue.IsNull() {
 				logrus.Tracef("Claim: %s", claim.AsJSON())
