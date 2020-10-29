@@ -21,6 +21,8 @@ var tayloredResults = map[string]string{
 	"styx":                   "Styxhexenhammer666",
 	"styxx":                  "Styxhexenhammer666",
 	"Radio Québec":           "Radio-Quebec",
+	"The Alex Jones Channel": "Alex Jones Channel",
+	"Alex Jones":             "Alex Jones Channel",
 }
 
 func checkForSpecialHandling(s string) string {
