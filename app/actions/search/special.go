@@ -23,6 +23,7 @@ var tayloredResults = map[string]string{
 	"Radio Québec":           "Radio-Quebec",
 	"The Alex Jones Channel": "Alex Jones Channel",
 	"Alex Jones":             "Alex Jones Channel",
+	"3Dto5DConsciousness":    "3D-to-5D-Consciousness",
 }
 
 func checkForSpecialHandling(s string) string {
