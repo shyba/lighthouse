@@ -24,6 +24,7 @@ var tayloredResults = map[string]string{
 	"The Alex Jones Channel": "Alex Jones Channel",
 	"Alex Jones":             "Alex Jones Channel",
 	"3Dto5DConsciousness":    "3D-to-5D-Consciousness",
+	"PostMillennial":         "ThePostMillennial",
 }
 
 func checkForSpecialHandling(s string) string {
