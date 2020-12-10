@@ -25,6 +25,11 @@ var tayloredResults = map[string]string{
 	"Alex Jones":             "Alex Jones Channel",
 	"3Dto5DConsciousness":    "3D-to-5D-Consciousness",
 	"PostMillennial":         "ThePostMillennial",
+	"planètes":               "planetes360",
+	"planetes":               "planetes360",
+	"planètes 360":           "planetes360",
+	"planetes 360":           "planetes360",
+	
 }
 
 func checkForSpecialHandling(s string) string {
