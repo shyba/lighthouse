@@ -41,6 +41,7 @@ var blockedChannels = []string{
 	"1092b755f939893d459dc8b136e8be2b82ecf4ca",
 	"7685064d832ced149c5c04e95bcebe5f005d2c46",
 	"1580d744fe8cc25c876e2742db5be8b0e22801c9",
+	"25ea58cb4cd034077dfbfd6bfcc13eff2ea5d3b0",
 }
 
 var blockedClaims = []string{
