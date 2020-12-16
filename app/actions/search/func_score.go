@@ -95,12 +95,8 @@ func viewCountFuncScoreQuery() *elastic.FunctionScoreQuery {
 }
 
 func claimCountFuncScoreQuery() *elastic.BoolQuery {
-
-	score := elastic.NewFieldValueFactorFunction().Field("claim_cnt").Missing(0.0).
-		Modifier("log1p")
-
-	scoreQuery := elastic.NewFunctionScoreQuery().AddScoreFunc(score)
-	return elastic.NewBoolQuery().Must(ChannelOnlyMatch).Should(scoreQuery)
+	r := elastic.NewRangeQuery("claim_cnt").Gte(1).Boost(2)
+	return elastic.NewBoolQuery().Must(ChannelOnlyMatch).Should(r)
 }
 
 func subscriptionCountFuncScoreQuery() *elastic.FunctionScoreQuery {
