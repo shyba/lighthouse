@@ -28,6 +28,7 @@ func (r searchRequest) newQuery() *elastic.FunctionScoreQuery {
 	base.Should(thumbnailBoostQuery())
 	base.Should(viewCountFuncScoreQuery())
 	base.Should(subscriptionCountFuncScoreQuery())
+	base.Should(claimCountFuncScoreQuery())
 
 	//The minimum things that should match for it to be considered a valid result.
 	//Anything in here will allow it to be scaled and returned
