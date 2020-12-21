@@ -95,7 +95,7 @@ func viewCountFuncScoreQuery() *elastic.FunctionScoreQuery {
 }
 
 func claimCountFuncScoreQuery() *elastic.BoolQuery {
-	r := elastic.NewRangeQuery("claim_cnt").Gte(1).Boost(2)
+	r := elastic.NewRangeQuery("claim_cnt").Gt(1).Boost(2)
 	return elastic.NewBoolQuery().Must(ChannelOnlyMatch).Should(r)
 }
 
