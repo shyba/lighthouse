@@ -19,6 +19,7 @@ func CloseRows(rows *sql.Rows) {
 	}
 }
 
+// CloseBody closes the body of an http response
 func CloseBody(responseBody io.ReadCloser) {
 	if err := responseBody.Close(); err != nil {
 		closeBodyError := errors.Prefix("closing body if response error: ", errors.Err(err))
