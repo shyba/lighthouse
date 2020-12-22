@@ -50,10 +50,14 @@ func (r searchRequest) newQuery() *elastic.FunctionScoreQuery {
 	base.Must(min)
 
 	if r.RelatedTo != nil {
-		base := elastic.NewBoolQuery()
-		min := elastic.NewBoolQuery()
+		base = elastic.NewBoolQuery()
+		min = elastic.NewBoolQuery()
 		min.Should(r.moreLikeThis())
-		base.Must(min)
+		base.Should(r.moreLikeThis())
+		base.Filter(r.getFilters()...)
+		return elastic.NewFunctionScoreQuery().
+			ScoreMode("sum").
+			Query(base)
 	}
 	//Any parameters that should filter but not impact scores
 	base.Filter(r.getFilters()...)
@@ -105,14 +109,15 @@ func (r searchRequest) moreLikeThis() *elastic.MoreLikeThisQuery {
 	mlt := elastic.NewMoreLikeThisQuery().QueryName("more-like-this").
 		Field("name").
 		Field("title").
-		Field("channel").
+		Field("description").
+		Field("channel") //.
 		//MinWordLength(5).
-		IgnoreLikeText("https")
+		//IgnoreLikeText("https")
 	if r.RelatedTo != nil {
 		item := elastic.NewMoreLikeThisQueryItem().
 			Index(index.Claims).
 			Id(util.StrFromPtr(r.RelatedTo))
-		return mlt.LikeItems(item).
+		return elastic.NewMoreLikeThisQuery().QueryName("more-like-this").LikeItems(item).
 			Boost(2)
 	}
 	return mlt.LikeText(r.S)
