@@ -49,15 +49,14 @@ func (r searchRequest) newQuery() *elastic.FunctionScoreQuery {
 	min.Should(r.matchCompressedChannel())
 	base.Must(min)
 
-	//Any parameters that should filter but not impact scores
-	base.Filter(r.getFilters()...)
-
 	if r.RelatedTo != nil {
 		base := elastic.NewBoolQuery()
 		min := elastic.NewBoolQuery()
 		min.Should(r.moreLikeThis())
 		base.Must(min)
 	}
+	//Any parameters that should filter but not impact scores
+	base.Filter(r.getFilters()...)
 
 	return elastic.NewFunctionScoreQuery().
 		ScoreMode("sum").
