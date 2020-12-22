@@ -6,6 +6,7 @@ import (
 	"github.com/lbryio/lighthouse/app/env"
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/jobs/chainquery"
+	"github.com/lbryio/lighthouse/app/jobs/internalapis"
 	"github.com/lbryio/lighthouse/app/util"
 
 	"github.com/sirupsen/logrus"
@@ -20,6 +21,8 @@ func InitializeConfiguration() {
 	}
 	InitSlack(config)
 	db.InitChainquery(config.ChainQueryDsn)
+	internalapis.APIToken = config.APIToken
+	internalapis.APIURL = config.APIURL
 	//db.InitInternalAPIs(config.InternalAPIDSN)
 	es.ElasticSearchURL = config.ElasticSearchURL
 	chainquery.SyncStateDir = config.SyncStateDir

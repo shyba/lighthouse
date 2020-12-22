@@ -2,6 +2,7 @@ package util
 
 import (
 	"database/sql"
+	"io"
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	"github.com/prometheus/common/log"
@@ -15,5 +16,12 @@ func CloseRows(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
 		closeRowsError := errors.Prefix("error closing rows: ", errors.Err(err))
 		log.Error(closeRowsError)
+	}
+}
+
+func CloseBody(responseBody io.ReadCloser) {
+	if err := responseBody.Close(); err != nil {
+		closeBodyError := errors.Prefix("closing body if response error: ", errors.Err(err))
+		log.Error(closeBodyError)
 	}
 }

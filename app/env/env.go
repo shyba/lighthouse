@@ -12,6 +12,8 @@ type Config struct {
 	SyncStateDir     string `env:"SYNCSTATEDIR"`
 	ElasticSearchURL string `env:"ELASTICSEARCHURL"`
 	InternalAPIDSN   string `env:"INTERNALAPIS_DSN"`
+	APIURL           string `env:"API_URL"`
+	APIToken         string `env:"API_TOKEN"`
 	SlackHookURL     string `env:"SLACKHOOKURL"`
 	SlackChannel     string `env:"SLACKCHANNEL"`
 }

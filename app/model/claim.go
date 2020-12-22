@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/lbryio/lighthouse/app/es/index"
@@ -19,6 +20,7 @@ import (
 type Claim struct {
 	ID                  uint64                 `json:"id,omitempty"`
 	Name                string                 `json:"name,omitempty"`
+	StrippedName        string                 `json:"stripped_name,omitempty"`
 	ClaimID             string                 `json:"claimId,omitempty"`
 	Channel             *null.String           `json:"channel,omitempty"`
 	ChannelClaimID      *null.String           `json:"channel_claim_id,omitempty"`
@@ -91,6 +93,7 @@ func GetClaimsFromDBRows(rows *sql.Rows) ([]Claim, int, error) {
 			}
 		}
 		claim.Value = value
+		claim.StrippedName = getStrippedName(claim.Name)
 		lastID = int(claim.ID)
 		claims = append(claims, claim)
 	}
@@ -162,4 +165,19 @@ func (c Claim) AsJSON() string {
 	}
 	return string(data)
 
+}
+
+var replacement = map[string]string{
+	"-":   "",
+	" ":   "",
+	"The": "",
+}
+
+func getStrippedName(name string) string {
+	var replacements []string
+	for k, v := range replacement {
+		replacements = append(replacements, k, v)
+	}
+	replacer := strings.NewReplacer(replacements...)
+	return replacer.Replace(name)
 }
