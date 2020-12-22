@@ -169,8 +169,9 @@ func (c Claim) AsJSON() string {
 
 var replacement = map[string]string{
 	"-":   "",
-	" ":   "",
+	"_":   "",
 	"The": "",
+	"the": "",
 }
 
 func getStrippedName(name string) string {
