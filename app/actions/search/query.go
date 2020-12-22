@@ -52,6 +52,13 @@ func (r searchRequest) newQuery() *elastic.FunctionScoreQuery {
 	//Any parameters that should filter but not impact scores
 	base.Filter(r.getFilters()...)
 
+	if r.RelatedTo != nil {
+		base := elastic.NewBoolQuery()
+		min := elastic.NewBoolQuery()
+		min.Should(r.moreLikeThis())
+		base.Must(min)
+	}
+
 	return elastic.NewFunctionScoreQuery().
 		ScoreMode("sum").
 		Query(base).
