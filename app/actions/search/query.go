@@ -120,9 +120,9 @@ func (r searchRequest) titleContains() *elastic.QueryStringQuery {
 }
 
 func (r searchRequest) matchTitle() *elastic.MatchQuery {
-	return elastic.NewMatchQuery("title", r.S).Fuzziness("AUTO").
-		QueryName("title-match").
-		Boost(1)
+	return elastic.NewMatchQuery("title", r.S). //Fuzziness("AUTO").
+							QueryName("title-match").
+							Boost(1)
 }
 
 func (r searchRequest) matchPhraseTitle() *elastic.MatchPhraseQuery {
@@ -139,9 +139,9 @@ func (r searchRequest) descriptionContains() *elastic.QueryStringQuery {
 }
 
 func (r searchRequest) matchDescription() *elastic.MatchQuery {
-	return elastic.NewMatchQuery("description", r.washed()).Fuzziness("AUTO").
-		QueryName("description-match").
-		Boost(1)
+	return elastic.NewMatchQuery("description", r.washed()). //Fuzziness("AUTO").
+									QueryName("description-match").
+									Boost(1)
 }
 
 func (r searchRequest) matchPhraseDescription() *elastic.MatchPhraseQuery {
@@ -166,7 +166,8 @@ func (r searchRequest) matchName() *elastic.BoolQuery {
 		boost = boost * 10
 	}
 	return elastic.NewBoolQuery().
-		Should(elastic.NewMatchQuery("name", r.S).Fuzziness("AUTO")).
+		Should(elastic.NewMatchQuery("name", r.S)). //.Fuzziness("AUTO"),
+
 		Boost(boost).
 		QueryName("name-match")
 }
@@ -183,8 +184,8 @@ func (r searchRequest) matchChannelName() *elastic.BoolQuery {
 func (r searchRequest) matchCompressedName() *elastic.BoolQuery {
 	//This is what returns channels with multiple words as the first result when searching
 	compressed := strings.Replace(r.S, " ", "", -1)
-	matchName := elastic.NewMatchQuery("name", compressed).Fuzziness("AUTO").
-		Boost(10)
+	matchName := elastic.NewMatchQuery("name", compressed). //Fuzziness("AUTO").
+								Boost(10)
 	return elastic.NewBoolQuery().
 		QueryName("name-match-@compressed").
 		Must(ChannelOnlyMatch).
