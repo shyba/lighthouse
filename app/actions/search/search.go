@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/karlseguin/ccache"
+
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/internal/metrics"
 	"github.com/lbryio/lighthouse/app/validator"
@@ -19,6 +21,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/olivere/elastic.v6"
 )
+
+var searchCache = ccache.New(ccache.Configure())
 
 type searchRequest struct {
 	S         string
@@ -110,30 +114,33 @@ func Search(r *http.Request) api.Response {
 		sortBy := strings.TrimPrefix(*searchRequest.SortBy, "^")
 		service.Sort(sortBy, strings.Contains(*searchRequest.SortBy, "^"))
 	}
-	searchResults, err := service.Do(context.Background())
-	if err != nil {
-		return api.Response{Error: errors.Err(err)}
-	}
-	results := make([]map[string]interface{}, 0)
-	for _, hit := range searchResults.Hits.Hits {
-		if hit.Source != nil {
-			data, err := hit.Source.MarshalJSON()
-			if err != nil {
-				logrus.Error(err)
-				continue
-			}
-			result := map[string]interface{}{}
-			err = json.Unmarshal(data, &result)
-			if err != nil {
-				logrus.Error(err)
-				continue
-			}
-			results = append(results, result)
+	results, err := searchCache.Fetch(r.URL.RequestURI(), 1*time.Minute, func() (interface{}, error) {
+		searchResults, err := service.Do(context.Background())
+		if err != nil {
+			return nil, errors.Err(err)
 		}
-	}
+		results := make([]map[string]interface{}, 0)
+		for _, hit := range searchResults.Hits.Hits {
+			if hit.Source != nil {
+				data, err := hit.Source.MarshalJSON()
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
+				result := map[string]interface{}{}
+				err = json.Unmarshal(data, &result)
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
+				results = append(results, result)
+			}
+		}
+		return results, nil
+	})
 	metrics.SearchDuration.WithLabelValues(
 		searchRequest.searchType,
 		strconv.Itoa(searchRequest.terms)).
 		Observe(time.Since(start).Seconds())
-	return api.Response{Data: results}
+	return api.Response{Data: results.Value()}
 }

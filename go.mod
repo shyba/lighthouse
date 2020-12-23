@@ -11,6 +11,8 @@ require (
 	github.com/jmoiron/sqlx v0.0.0-20170430194603-d9bd385d68c0
 	github.com/johntdyer/slack-go v0.0.0-20180213144715-95fac1160b22 // indirect
 	github.com/johntdyer/slackrus v0.0.0-20180518184837-f7aae3243a07
+	github.com/karlseguin/ccache v2.0.3+incompatible
+	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/lbryio/lbry.go v1.1.2
 	github.com/lbryio/lbry.go/v2 v2.4.6
 	github.com/lbryio/ozzo-validation v0.0.0-20170323141101-d1008ad1fd04
