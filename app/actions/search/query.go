@@ -390,7 +390,8 @@ func (r searchRequest) bidStateFilter() *elastic.BoolQuery {
 }
 
 func (r searchRequest) noClaimChannelFilter() *elastic.BoolQuery {
-	return elastic.NewBoolQuery().Must(ChannelOnlyMatch).Must(elastic.NewRangeQuery("claim_cnt").Gt(1))
+	filtered := elastic.NewBoolQuery().Must(ChannelOnlyMatch).Must(elastic.NewMatchQuery("claim_cnt", "1"))
+	return elastic.NewBoolQuery().MustNot(filtered)
 }
 
 func (r searchRequest) channelIDFilter() *elastic.MatchQuery {
