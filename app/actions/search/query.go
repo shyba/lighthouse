@@ -128,9 +128,9 @@ func (r searchRequest) titleContains() *elastic.QueryStringQuery {
 }
 
 func (r searchRequest) matchTitle() *elastic.MatchQuery {
-	return elastic.NewMatchQuery("title", r.S). //Fuzziness("AUTO").
-							QueryName("title-match").
-							Boost(1)
+	return elastic.NewMatchQuery("title", r.S).Fuzziness("AUTO").
+		QueryName("title-match").
+		Boost(1)
 }
 
 func (r searchRequest) matchPhraseTitle() *elastic.MatchPhraseQuery {
