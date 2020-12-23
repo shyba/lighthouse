@@ -47,7 +47,7 @@ func InitSlack(config *env.Config) {
 			AcceptedLevels: slackrus.LevelThreshold(logrus.InfoLevel),
 			Channel:        slackChannel,
 			IconEmoji:      ":lighthouse:",
-			Username:       "Lighthouse",
+			Username:       config.SlackID,
 		})
 	}
 }

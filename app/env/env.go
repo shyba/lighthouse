@@ -16,6 +16,7 @@ type Config struct {
 	APIToken         string `env:"API_TOKEN"`
 	SlackHookURL     string `env:"SLACKHOOKURL"`
 	SlackChannel     string `env:"SLACKCHANNEL"`
+	SlackID          string `env:"SLACK_ID"`
 }
 
 // NewWithEnvVars creates an Config from environment variables
