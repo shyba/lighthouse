@@ -257,6 +257,7 @@ func (r searchRequest) exactMatchQueries() elastic.Query {
 func (r searchRequest) getFilters() []elastic.Query {
 	var filters []elastic.Query
 	bidstateFilter := r.bidStateFilter()
+	noClaimChFilter := r.noClaimChannelFilter()
 
 	if exact := r.exactMatchQueries(); exact != nil {
 		filters = append(filters, exact)
@@ -302,10 +303,10 @@ func (r searchRequest) getFilters() []elastic.Query {
 	}
 
 	if len(filters) > 0 {
-		return append(filters, bidstateFilter)
+		return append(filters, bidstateFilter, noClaimChFilter)
 
 	}
-	return []elastic.Query{bidstateFilter}
+	return []elastic.Query{bidstateFilter, noClaimChFilter}
 }
 
 var cadTypes = []interface{}{"SKP", "simplify3d_stl"}
@@ -387,6 +388,10 @@ func (r searchRequest) freeContentFilter() elastic.Query {
 
 func (r searchRequest) bidStateFilter() *elastic.BoolQuery {
 	return elastic.NewBoolQuery().MustNot(elastic.NewMatchQuery("bid_state", "Expired"))
+}
+
+func (r searchRequest) noClaimChannelFilter() *elastic.BoolQuery {
+	return elastic.NewBoolQuery().Must(ChannelOnlyMatch).Must(elastic.NewRangeQuery("claim_cnt").Gt(1))
 }
 
 func (r searchRequest) channelIDFilter() *elastic.MatchQuery {
