@@ -26,8 +26,8 @@ func Sync() {
 	defer metrics.Job(time.Now(), "internalapis_sync")
 	incSyncRunning = true
 	defer endIncSync()
-	//syncViewCounts()
 	syncSubCounts()
+	syncViewCounts()
 
 }
 

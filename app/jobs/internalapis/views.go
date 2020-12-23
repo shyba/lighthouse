@@ -2,10 +2,14 @@ package internalapis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
 
-	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/es/index"
 	"github.com/lbryio/lighthouse/app/model"
@@ -13,8 +17,6 @@ import (
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/null"
-	"github.com/lbryio/lbry.go/v2/extras/query"
-
 	"github.com/sirupsen/logrus"
 	"gopkg.in/olivere/elastic.v6"
 )
@@ -75,43 +77,49 @@ func updateViewCounts(claimIDs []string, iteration int, p *elastic.BulkProcessor
 		logrus.Warningf("there are no claimids to update!")
 		return nil
 	}
-	iSet := make([]interface{}, len(claimIDs))
-	for i, c := range claimIDs {
-		iSet[i] = c
-	}
-	q := fmt.Sprintf(`
-			SELECT file.claim_id,count(file_view.id) 
-			FROM file 
-			INNER JOIN file_view ON file_view.file_id = file.id 
-			WHERE file.claim_id IN (%s) 
-			GROUP BY file.claim_id`, query.Qs(len(claimIDs)))
-
-	rows, err := db.InternalAPIs.Query(q, iSet...)
+	result, err := getViewCnts(claimIDs)
 	if err != nil {
-		return errors.Prefix(fmt.Sprintf("inc call for batch %d failed:", iteration+1), err)
-
+		return errors.Prefix(fmt.Sprintf("failed to get view counts at iteration %d: ", iteration), err)
 	}
-	defer util.CloseRows(rows)
-	type result struct {
-		ClaimID string
-		ViewCnt int64
+	if len(result) != len(claimIDs) {
+		return errors.Err("sent %d claimIDs, returned array only has %d entries, failed to get views.", len(claimIDs), len(result))
 	}
-	vCntMap := make(map[string]int64)
-	for rows.Next() {
-		r := result{}
-		err := rows.Scan(&r.ClaimID, &r.ViewCnt)
-		if err != nil {
-			return errors.Err(err)
-		}
-		vCntMap[r.ClaimID] = r.ViewCnt
-	}
-	for claimID, viewCount := range vCntMap {
-		if viewCount > 0 {
-			logrus.Debugf("Found %d views for %s", viewCount, claimID)
-			count := null.Uint64From(uint64(viewCount))
+	for i, claimID := range claimIDs {
+		if result[i] > 0 {
+			logrus.Tracef("Found %d views for %s", result[i], claimID)
+			count := null.Uint64From(uint64(result[i]))
 			c := model.Claim{ClaimID: claimID, ViewCnt: &count}
 			c.Update(p)
 		}
 	}
 	return nil
+}
+
+type viewCntResponse struct {
+	Success bool        `json:"success"`
+	Error   interface{} `json:"error"`
+	Data    []int64     `json:"data"`
+}
+
+func getViewCnts(claimIDs []string) ([]int64, error) {
+	c := http.Client{}
+	form := make(url.Values)
+	form.Set("auth_token", APIToken)
+	form.Set("claim_id", strings.Join(claimIDs, ","))
+
+	response, err := c.PostForm(APIURL+"/file/view_count", form)
+	if err != nil {
+		return nil, errors.Err(err)
+	}
+	defer util.CloseBody(response.Body)
+	b, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, errors.Err(err)
+	}
+	var me viewCntResponse
+	err = json.Unmarshal(b, &me)
+	if err != nil {
+		return nil, errors.Err(err)
+	}
+	return me.Data, nil
 }
