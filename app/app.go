@@ -23,6 +23,7 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
+// InstanceName is used to describe the instance running and that is used in the powered by header
 var InstanceName = "UNKOWN"
 
 //DoYourThing launches the app
