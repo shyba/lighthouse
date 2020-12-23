@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/johntdyer/slackrus"
+	"github.com/lbryio/lighthouse/app"
 	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/env"
 	"github.com/lbryio/lighthouse/app/es"
@@ -26,6 +27,7 @@ func InitializeConfiguration() {
 	//db.InitInternalAPIs(config.InternalAPIDSN)
 	es.ElasticSearchURL = config.ElasticSearchURL
 	chainquery.SyncStateDir = config.SyncStateDir
+	app.InstanceName = config.SlackID
 	if viper.GetBool("debugmode") {
 		util.Debugging = true
 		logrus.SetLevel(logrus.DebugLevel)

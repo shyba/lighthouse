@@ -23,6 +23,8 @@ import (
 	"gopkg.in/olivere/elastic.v6"
 )
 
+var InstanceName = "UNKOWN"
+
 //DoYourThing launches the app
 func DoYourThing() {
 	initElasticSearch()
@@ -72,6 +74,7 @@ func initAPIServer() {
 	hs["Content-Security-Policy"] = "default-src 'none'"
 	hs["Server"] = "lbry.com"
 	hs["Access-Control-Allow-Origin"] = "*"
+	hs["X-Powered-By"] = InstanceName
 	api.ResponseHeaders = hs
 	api.Log = func(request *http.Request, response *api.Response, err error) {
 		consoleText := request.RemoteAddr + " [" + strconv.Itoa(response.Status) + "]: " + request.Method + " " + request.URL.Path
