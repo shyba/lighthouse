@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/karlseguin/ccache"
-
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/internal/metrics"
 	"github.com/lbryio/lighthouse/app/validator"
@@ -18,11 +16,12 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	v "github.com/lbryio/ozzo-validation"
 
+	"github.com/karlseguin/ccache"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/olivere/elastic.v6"
 )
 
-var searchCache = ccache.New(ccache.Configure())
+var searchCache = ccache.New(ccache.Configure().MaxSize(10000))
 
 type searchRequest struct {
 	S         string
@@ -114,7 +113,7 @@ func Search(r *http.Request) api.Response {
 		sortBy := strings.TrimPrefix(*searchRequest.SortBy, "^")
 		service.Sort(sortBy, strings.Contains(*searchRequest.SortBy, "^"))
 	}
-	results, err := searchCache.Fetch(r.URL.RequestURI(), 1*time.Minute, func() (interface{}, error) {
+	results, err := searchCache.Fetch(r.URL.RequestURI(), 5*time.Minute, func() (interface{}, error) {
 		searchResults, err := service.Do(context.Background())
 		if err != nil {
 			return nil, errors.Err(err)
@@ -138,6 +137,9 @@ func Search(r *http.Request) api.Response {
 		}
 		return results, nil
 	})
+	if err != nil {
+		return api.Response{Error: errors.Err(err)}
+	}
 	metrics.SearchDuration.WithLabelValues(
 		searchRequest.searchType,
 		strconv.Itoa(searchRequest.terms)).

@@ -9,13 +9,14 @@ import (
 
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/internal/metrics"
-	"github.com/sirupsen/logrus"
-
-	"gopkg.in/olivere/elastic.v6"
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/api"
 	v "github.com/lbryio/ozzo-validation"
+
+	"github.com/karlseguin/ccache"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/olivere/elastic.v6"
 )
 
 type autoCompleteRequest struct {
@@ -27,6 +28,8 @@ type autoCompleteRequest struct {
 	Source *bool
 	Debug  *bool
 }
+
+var autoCompleteCache = ccache.New(ccache.Configure().MaxSize(10000))
 
 // AutoComplete returns the name of claims that it matches against for auto completion.
 func AutoComplete(r *http.Request) api.Response {
@@ -45,27 +48,27 @@ func AutoComplete(r *http.Request) api.Response {
 
 	query := elastic.NewBoolQuery()
 
-    if acRequest.S[0] == '@' {
-        matchName := elastic.NewBoolQuery().
-            Should(elastic.NewMatchQuery("name", acRequest.S)).
-            Must(elastic.NewMatchQuery("claim_type", "channel"))
+	if acRequest.S[0] == '@' {
+		matchName := elastic.NewBoolQuery().
+			Should(elastic.NewMatchQuery("name", acRequest.S)).
+			Must(elastic.NewMatchQuery("claim_type", "channel"))
 
-        query.Should(matchName)
-    } else {
-        mmName := elastic.NewMultiMatchQuery(acRequest.S).
-            Type("phrase_prefix").Slop(5).MaxExpansions(50).
-            Field("name^4")
-        query.Should(mmName)
+		query.Should(matchName)
+	} else {
+		mmName := elastic.NewMultiMatchQuery(acRequest.S).
+			Type("phrase_prefix").Slop(5).MaxExpansions(50).
+			Field("name^4")
+		query.Should(mmName)
 
-	    mmATD := elastic.NewMultiMatchQuery(acRequest.S).
-		    Type("phrase_prefix").Slop(5).MaxExpansions(50).
-		    Field("value.Claim.stream.metadata.author^3").
-            Field("value.Claim.stream.metadata.title^5").
-            Field("value.stream.metadata.description^2")
+		mmATD := elastic.NewMultiMatchQuery(acRequest.S).
+			Type("phrase_prefix").Slop(5).MaxExpansions(50).
+			Field("value.Claim.stream.metadata.author^3").
+			Field("value.Claim.stream.metadata.title^5").
+			Field("value.stream.metadata.description^2")
 
-        nested := elastic.NewNestedQuery("value", mmATD)
-        query.Should(nested)
-    }
+		nested := elastic.NewNestedQuery("value", mmATD)
+		query.Should(nested)
+	}
 
 	if acRequest.NSFW != nil {
 		query = query.Must(elastic.NewMatchQuery("nsfw", *acRequest.NSFW))
@@ -97,35 +100,41 @@ func AutoComplete(r *http.Request) api.Response {
 		}
 		return api.Response{Data: searchResults}
 	}
-	searchResults, err := service.Do(context.Background())
+	results, err := autoCompleteCache.Fetch(r.URL.RequestURI(), 5*time.Minute, func() (interface{}, error) {
+		searchResults, err := service.Do(context.Background())
+		if err != nil {
+			return nil, errors.Err(err)
+		}
+		type lighthouseResult struct {
+			Name string `json:"name"`
+		}
+		names := make([]string, 0, len(searchResults.Hits.Hits))
+		preventDups := make(map[string]string, 0)
+		for _, hit := range searchResults.Hits.Hits {
+			if hit.Source != nil {
+				data, err := hit.Source.MarshalJSON()
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
+				result := lighthouseResult{}
+				err = json.Unmarshal(data, &result)
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
+				if _, ok := preventDups[result.Name]; !ok {
+					names = append(names, result.Name)
+					preventDups[result.Name] = result.Name
+				}
+			}
+		}
+		return names, nil
+	})
 	if err != nil {
 		return api.Response{Error: errors.Err(err)}
 	}
-	type lighthouseResult struct {
-		Name string `json:"name"`
-	}
-	names := make([]string, 0, len(searchResults.Hits.Hits))
-	preventDups := make(map[string]string, 0)
-	for _, hit := range searchResults.Hits.Hits {
-		if hit.Source != nil {
-			data, err := hit.Source.MarshalJSON()
-			if err != nil {
-				logrus.Error(err)
-				continue
-			}
-			result := lighthouseResult{}
-			err = json.Unmarshal(data, &result)
-			if err != nil {
-				logrus.Error(err)
-				continue
-			}
-			if _, ok := preventDups[result.Name]; !ok {
-				names = append(names, result.Name)
-				preventDups[result.Name] = result.Name
-			}
-		}
-	}
 	metrics.AutoCompleteDuration.Observe(time.Since(start).Seconds())
-	return api.Response{Data: names}
+	return api.Response{Data: results.Value()}
 
 }
