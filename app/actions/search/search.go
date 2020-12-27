@@ -54,7 +54,7 @@ func Search(r *http.Request) api.Response {
 	searchRequest := searchRequest{}
 
 	err := api.FormValues(r, &searchRequest, []*v.FieldRules{
-		v.Field(&searchRequest.S, v.Required),
+		v.Field(&searchRequest.S, v.Length(3, 99999), v.Required),
 		v.Field(&searchRequest.Size, v.Max(10000)),
 		v.Field(&searchRequest.From, v.Max(9999)),
 		//There is a bug in the app https://github.com/lbryio/lbry-desktop/issues/3377
@@ -65,6 +65,7 @@ func Search(r *http.Request) api.Response {
 		return api.Response{Error: errors.Err(err), Status: http.StatusBadRequest}
 	}
 	searchRequest.searchType = "general"
+	searchRequest.S = truncate(searchRequest.S)
 	searchRequest.S = checkForSpecialHandling(searchRequest.S)
 	searchRequest.terms = len(strings.Split(searchRequest.S, " "))
 	if searchRequest.RelatedTo != nil {

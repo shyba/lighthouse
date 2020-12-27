@@ -29,13 +29,21 @@ var tayloredResults = map[string]string{
 	"planetes":               "planetes360",
 	"planètes 360":           "planetes360",
 	"planetes 360":           "planetes360",
-	
 }
 
 func checkForSpecialHandling(s string) string {
 	sLower := strings.ToLower(s)
 	if newSearch, ok := tayloredResults[sLower]; ok {
 		return newSearch
+	}
+	return s
+}
+
+const limitForUsefulResults = 300
+
+func truncate(s string) string {
+	if len(s) > limitForUsefulResults {
+		return s[:limitForUsefulResults]
 	}
 	return s
 }
