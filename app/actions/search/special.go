@@ -29,6 +29,7 @@ var tayloredResults = map[string]string{
 	"planetes":               "planetes360",
 	"planètes 360":           "planetes360",
 	"planetes 360":           "planetes360",
+	"Louis Rossman":          "Louis Rossmann",
 }
 
 func checkForSpecialHandling(s string) string {
