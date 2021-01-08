@@ -44,7 +44,7 @@ var blockedChannels = []string{
 	"25ea58cb4cd034077dfbfd6bfcc13eff2ea5d3b0",
 	"12d4a23b27ab8722ca8550c755048ebf5ca242a8",
 	"e8d1b8c9e9767c35e3c6729f196e9407e5d9a988",
-	"35f4556bea32130244c9ec2feae63002cafdcb7c", //@Thumbnails
+	"4c971f1076e39845c1643cdcf41d2287e1ea4961", //@Thumbnails
 	"2ad860f494345417824e30eb85f4ce7d1fea9cff", //@Thumbnails2
 	"f2cf43b86b9d70175dc22dbb9ff7806241d90780", //@Thumbnails3
 }
