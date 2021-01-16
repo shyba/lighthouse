@@ -256,7 +256,6 @@ func (r searchRequest) exactMatchQueries() elastic.Query {
 func (r searchRequest) getFilters() []elastic.Query {
 	var filters []elastic.Query
 	bidstateFilter := r.bidStateFilter()
-	noClaimChFilter := r.noClaimChannelFilter()
 
 	if exact := r.exactMatchQueries(); exact != nil {
 		filters = append(filters, exact)
@@ -302,10 +301,9 @@ func (r searchRequest) getFilters() []elastic.Query {
 	}
 
 	if len(filters) > 0 {
-		return append(filters, bidstateFilter, noClaimChFilter)
-
+		return append(filters, bidstateFilter) //, r.noClaimChannelFilter())
 	}
-	return []elastic.Query{bidstateFilter, noClaimChFilter}
+	return []elastic.Query{bidstateFilter} //, r.noClaimChannelFilter()}
 }
 
 var cadTypes = []interface{}{"SKP", "simplify3d_stl"}
