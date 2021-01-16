@@ -91,7 +91,7 @@ func viewCountFuncScoreQuery() *elastic.FunctionScoreQuery {
 	score := elastic.NewFieldValueFactorFunction().Field("view_cnt").Missing(1.0).
 		Modifier("log1p")
 
-	return elastic.NewFunctionScoreQuery().AddScoreFunc(score)
+	return elastic.NewFunctionScoreQuery().AddScoreFunc(score).ScoreMode("sum")
 }
 
 func claimCountFuncScoreQuery() *elastic.BoolQuery {
@@ -103,5 +103,5 @@ func subscriptionCountFuncScoreQuery() *elastic.FunctionScoreQuery {
 	score := elastic.NewFieldValueFactorFunction().Field("sub_cnt").Missing(1.0).
 		Modifier("log1p")
 
-	return elastic.NewFunctionScoreQuery().AddScoreFunc(score)
+	return elastic.NewFunctionScoreQuery().AddScoreFunc(score).ScoreMode("sum")
 }
