@@ -8,7 +8,7 @@ import (
 
 	"github.com/lbryio/lighthouse/app/es"
 	"github.com/lbryio/lighthouse/app/es/index"
-	"gopkg.in/olivere/elastic.v6"
+	"github.com/olivere/elastic/v7"
 
 	"github.com/lbryio/lbry.go/v2/extras/api"
 	"github.com/lbryio/lbry.go/v2/extras/errors"

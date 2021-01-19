@@ -16,7 +16,7 @@ import (
 
 	"github.com/karlseguin/ccache"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/olivere/elastic.v6"
+	"github.com/olivere/elastic/v7"
 )
 
 type autoCompleteRequest struct {

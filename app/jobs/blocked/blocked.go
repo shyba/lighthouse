@@ -9,7 +9,7 @@ import (
 
 	"github.com/lbryio/lighthouse/app/internal/metrics"
 
-	"gopkg.in/olivere/elastic.v6"
+	"github.com/olivere/elastic/v7"
 
 	"github.com/lbryio/lighthouse/app/db"
 	"github.com/lbryio/lighthouse/app/es"

@@ -3,7 +3,7 @@ package search
 import (
 	"time"
 
-	"gopkg.in/olivere/elastic.v6"
+	"github.com/olivere/elastic/v7"
 )
 
 const effectiveFactor = 19.0

@@ -10,7 +10,7 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/util"
 
 	"github.com/sirupsen/logrus"
-	"gopkg.in/olivere/elastic.v6"
+	"github.com/olivere/elastic/v7"
 )
 
 var streamOnlyMatch = elastic.NewMatchQuery("claim_type", "stream")

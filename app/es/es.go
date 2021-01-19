@@ -2,7 +2,7 @@ package es
 
 import (
 	"github.com/sirupsen/logrus"
-	"gopkg.in/olivere/elastic.v6"
+	"github.com/olivere/elastic/v7"
 )
 
 // Client is the elasticsearch client created on lighthouse startup and is used to make queries to the db.
